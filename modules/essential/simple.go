@@ -1,3 +1,5 @@
 package essential
 
-func Register(m )
+func Register(m *Module) {
+	
+}
