@@ -1,6 +1,7 @@
 package core
 
 import (
+	"strings"
 	"fmt"
 	"errors"
 
@@ -8,17 +9,24 @@ import (
 	"github.com/getsentry/raven-go"
 )
 
-// Client is connected to the platform
+// Client is the full client context
 type Client struct {
 	Config Config
 	SentryTags map[string]string
 	Sessions []*discordgo.Session
+	Commands map[string]*Command
+	Emotes map[string]string
+
+	ourMention string
+	ourGuildMention string
+	ownerId string
 }
 
 // NewClient creates a new Discord client
 func NewClient(config Config) *Client {
 	sessions := make([]*discordgo.Session, config.Shards)
 
+	// create DiscordGo sessions for shards
 	for id := range sessions {
 		dg, _ := discordgo.New() // error is impossible
 		dg.Token = "Bot " + config.Token
@@ -38,10 +46,11 @@ func NewClient(config Config) *Client {
 		Config: config,
 		SentryTags: nil,
 		Sessions: sessions,
+		Commands: make(map[string]*Command, 120),
 	}
 }
 
-// ForSessions executes a function with every platform session
+// ForSessions executes a function with every session
 func (c *Client) ForSessions(iter func(*discordgo.Session)) {
 	for _, dg := range c.Sessions {
 		iter(dg)
@@ -55,31 +64,89 @@ func (c *Client) Start() error {
 		if err != nil {
 			return err
 		}
+
+		dg.AddHandler(c.OnMessage)
 	}
 
 	return nil
 }
 
+func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageCreate) {
+	prefix := c.Config.DefaultPrefix // TODO: prefix
+
+	if strings.HasPrefix(event.Content, prefix) {
+		split := strings.Fields(event.Content)
+		commandName := split[0][len(prefix):]
+
+		if command, ok := c.Commands[commandName]; ok {
+			context := &Context{
+				Client: c,
+				Session: session,
+				Event: event,
+				Invoker: commandName,
+				Args: split[1:],
+				RawArgs: strings.TrimSpace(event.Content[len(prefix)+len(commandName):]),
+			}
+
+			command.Function(context)
+		}
+
+		return
+	} else if strings.HasPrefix(event.Content, c.ourMention) || strings.HasPrefix(event.Content, c.ourGuildMention) {
+		request := strings.TrimSpace(event.Content[min(len(event.Content), 22):])
+		if strings.EqualFold(request, "prefix") {
+
+		}
+	} // TODO: private channel
+}
+
 // LoadModules loads all the built in modules
 func (c *Client) LoadModules() error {
+	for _, module := range modules {
+		err := c.LoadModule(module)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// LoadModule loads a Module
+func (c *Client) LoadModule(m Module) error {
+	for name, command := range m.Commands {
+		if _, ok := c.Commands[name]; ok {
+			return errors.New("Command '" + name + "' already exists")
+		}
+
+		c.Commands[name] = command
+
+		// register aliases
+		for _, alias := range command.Aliases {
+			if _, ok := c.Commands[alias]; ok {
+				return errors.New("Command '" + name + "' already exists")
+			}
+
+			c.Commands[alias] = command
+		}
+	}
+
 	return nil
 }
 
 // ErrorHandler recovers from panics and reports them when deferred
 func (c *Client) ErrorHandler() {
-	var packet *raven.Packet
 	err := recover()
 
 	switch rval := err.(type) {
 	case nil:
 		return
 	case error:
-		packet = raven.NewPacket(rval.Error(), raven.NewException(rval, raven.NewStacktrace(2, 3, nil)))
+		packet := raven.NewPacket(rval.Error(), raven.NewException(rval, raven.NewStacktrace(2, 3, nil)))
+		raven.DefaultClient.Capture(packet, c.SentryTags)
 	default:
-		rvalStr := fmt.Sprint(rval)
-
-		packet = raven.NewPacket(rvalStr, raven.NewException(errors.New(rvalStr), raven.NewStacktrace(2, 3, nil)))
+		rvalStr := fmt.Sprint(rval) // stringify
+		packet := raven.NewPacket(rvalStr, raven.NewException(errors.New(rvalStr), raven.NewStacktrace(2, 3, nil)))
+		raven.DefaultClient.Capture(packet, c.SentryTags)
 	}
-
-	_, _ = raven.DefaultClient.Capture(packet, c.SentryTags)
 }

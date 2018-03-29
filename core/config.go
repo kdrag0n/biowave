@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 )
 
-// Config configures the client
+// Config configures the client.
 type Config struct {
 	Token         string    `json:"token"`
 	DefaultPrefix string    `json:"prefix"`
@@ -23,7 +23,7 @@ type KeyConfig struct {
 	ChatEngine     string `json:"chatengine"`
 }
 
-// LoadConfig loads a client config from the given path
+// LoadConfig loads a client config from the given path.
 func LoadConfig(path string) (Config, error) {
 	config := Config{
 		Shards:        1,

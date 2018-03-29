@@ -16,8 +16,6 @@ func main() {
 		config.Sentry = true
 	}
 
-	raven.CapturePanic()
-
 	client := core.NewClient(config)
 	client.Start()
 }

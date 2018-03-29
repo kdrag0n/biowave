@@ -1,6 +1,6 @@
 package core
 
-// Permission is a internal or chat permission that can be granted
+// A Permission is an internal or chat permission that can be granted.
 type Permission uint8
 
 // Permissions

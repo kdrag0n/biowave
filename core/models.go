@@ -1,11 +1,6 @@
 package core
 
-// Context provides a context for commands
-type Context struct {
-	Client *Client
-}
-
-// Command is a chat command usable by users
+// Command is a chat command usable by users.
 type Command struct {
 	Name        string
 	Description string
@@ -14,5 +9,5 @@ type Command struct {
 	Function    CommandFunc
 }
 
-// CommandFunc is the internal function for a command
+// CommandFunc is the internal function for a command.
 type CommandFunc func(*Context)
