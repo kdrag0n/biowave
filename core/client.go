@@ -19,7 +19,7 @@ type Client struct {
 
 	ourMention string
 	ourGuildMention string
-	ownerId string
+	ownerID string
 }
 
 // NewClient creates a new Discord client
@@ -71,6 +71,7 @@ func (c *Client) Start() error {
 	return nil
 }
 
+// OnMessage handles an incoming message.
 func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageCreate) {
 	prefix := c.Config.DefaultPrefix // TODO: prefix
 
@@ -90,8 +91,6 @@ func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageC
 
 			command.Function(context)
 		}
-
-		return
 	} else if strings.HasPrefix(event.Content, c.ourMention) || strings.HasPrefix(event.Content, c.ourGuildMention) {
 		request := strings.TrimSpace(event.Content[min(len(event.Content), 22):])
 		if strings.EqualFold(request, "prefix") {

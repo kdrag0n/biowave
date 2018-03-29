@@ -19,5 +19,5 @@ func (c *Context) Send(message string) {
 }
 
 func (c *Context) Ok(message string) {
-	c.Session.ChannelMessageSend(c.Event.ChannelID, "")
+	c.Send()
 }
