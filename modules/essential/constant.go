@@ -11,5 +11,5 @@ func init() {
 }
 
 func cmdTest(c *core.Context) {
-	c.Send("It works!")
+	c.Session.MessageReactionAdd(c.Event.ChannelID, c.Event.ID, "👍")
 }
