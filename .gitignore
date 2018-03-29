@@ -19,4 +19,5 @@
 .history
 
 /data
-config.json
+config.yml
+/debug

@@ -1,26 +1,26 @@
 package core
 
 import (
-	"encoding/json"
+	"github.com/go-yaml/yaml"
 	"go.uber.org/zap"
 	"io/ioutil"
 )
 
 // Config configures the client.
 type Config struct {
-	Token         string    `json:"token"`
-	DefaultPrefix string    `json:"prefix"`
-	Shards        int       `json:"shards"`
-	Sentry        bool      `json:"-"`
-	Keys          KeyConfig `json:"keys"`
+	Token         string    `yaml:"token"`
+	DefaultPrefix string    `yaml:"prefix"`
+	Shards        int       `yaml:"shards"`
+	Sentry        bool      `yaml:"-"`
+	Keys          KeyConfig `yaml:"keys"`
 }
 
 // KeyConfig contains the API keys.
 type KeyConfig struct {
-	Sentry         string `json:"sentry"`
-	OpenWeatherMap string `json:"openweathermap"`
-	Google         string `json:"google"`
-	ChatEngine     string `json:"chatengine"`
+	Sentry         string `yaml:"sentry"`
+	OpenWeatherMap string `yaml:"openweathermap"`
+	Google         string `yaml:"google"`
+	ChatEngine     string `yaml:"chatengine"`
 }
 
 // LoadConfig loads a client config from the given path.
@@ -34,13 +34,13 @@ func LoadConfig(path string) (Config, error) {
 
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		logger.Error("Error loading config", zap.Error(err))
+		Log.Error("Error loading config", zap.Error(err))
 		return config, err
 	}
 
-	err = json.Unmarshal(bytes, &config)
+	err = yaml.Unmarshal(bytes, &config)
 	if err != nil {
-		logger.Error("Error loading config", zap.Error(err))
+		Log.Error("Error loading config", zap.Error(err))
 		return config, err
 	}
 

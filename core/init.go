@@ -5,7 +5,8 @@ import (
 )
 
 var (
-	logger *zap.Logger
+	// Log is the bot's logger.
+	Log *zap.Logger
 )
 
 func init() {
@@ -17,10 +18,10 @@ func init() {
 		OutputPaths:      []string{"stderr"},
 		ErrorOutputPaths: []string{"stderr"},
 	}.Build()
-	
+
 	if err != nil {
 		panic(err)
 	}
 
-	logger = l
+	Log = l
 }

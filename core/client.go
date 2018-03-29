@@ -1,9 +1,9 @@
 package core
 
 import (
-	"strings"
-	"fmt"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/getsentry/raven-go"
@@ -11,20 +11,20 @@ import (
 
 // Client is the full client context
 type Client struct {
-	Config Config
+	Config     Config
 	SentryTags map[string]string
-	Sessions []*discordgo.Session
-	Commands map[string]*Command
-	
-	// Emotes
-	EmoteOk string
-	EmoteFail string
-	EmoteGrave string
-	EmoteBot string
+	Sessions   []*discordgo.Session
+	Commands   map[string]*Command
 
-	ourMention string
+	// Emotes
+	EmoteOk    string
+	EmoteFail  string
+	EmoteGrave string
+	EmoteBot   string
+
+	ourMention      string
 	ourGuildMention string
-	ownerID string
+	ownerID         string
 }
 
 // NewClient creates a new Discord client
@@ -48,19 +48,19 @@ func NewClient(config Config) *Client {
 	}
 
 	return &Client{
-		Config: config,
+		Config:     config,
 		SentryTags: nil,
-		Sessions: sessions,
-		Commands: make(map[string]*Command, 120),
-		
-		EmoteOk: "✅",
-		EmoteFail: "❌",
-		EmoteGrave: "⚰",
-		EmoteBot: "bot",
+		Sessions:   sessions,
+		Commands:   make(map[string]*Command, 120),
 
-		ourMention: "<@0>",
+		EmoteOk:    "✅",
+		EmoteFail:  "❌",
+		EmoteGrave: "⚰",
+		EmoteBot:   "bot",
+
+		ourMention:      "<@0>",
 		ourGuildMention: "<@!0>",
-		ownerID: "0",
+		ownerID:         "0",
 	}
 }
 
@@ -73,6 +73,7 @@ func (c *Client) ForSessions(iter func(*discordgo.Session)) {
 
 // Start initiates the client's connections
 func (c *Client) Start() error {
+	c.LoadModules()
 	for _, dg := range c.Sessions {
 		err := dg.Open()
 		if err != nil {
@@ -93,10 +94,10 @@ func (c *Client) Start() error {
 				c.EmoteGrave = "<:rip:337405147347025930>"
 
 				/*
-				<a:loading:428754343018364929>
-				<a:typing:428754324668022785>
-				<a:loading2:428754355911524357>
-				<a:download:428754309610733588>
+					<a:loading:428754343018364929>
+					<a:typing:428754324668022785>
+					<a:loading2:428754355911524357>
+					<a:download:428754309610733588>
 				*/
 			}
 		})
@@ -105,7 +106,13 @@ func (c *Client) Start() error {
 	return nil
 }
 
-
+// Stop stops the client and all associated Discord sessions.
+func (c *Client) Stop() {
+	for _, dg := range c.Sessions {
+		dg.Close()
+	}
+	// TODO: unload modules
+}
 
 // OnMessage handles an incoming message.
 func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageCreate) {
@@ -123,11 +130,11 @@ func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageC
 
 		if command, ok := c.Commands[commandName]; ok {
 			context := &Context{
-				Client: c,
+				Client:  c,
 				Session: session,
-				Event: event,
+				Event:   event,
 				Invoker: commandName,
-				Args: split[1:],
+				Args:    split[1:],
 				RawArgs: strings.TrimSpace(event.Content[len(prefix)+len(commandName):]),
 			}
 
