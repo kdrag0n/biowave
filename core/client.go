@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/kdrag0n/discordgo"
 	"github.com/getsentry/raven-go"
 )
 

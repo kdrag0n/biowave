@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/bwmarrin/discordgo"
+	"github.com/kdrag0n/discordgo"
 )
 
 // Context provides a context for commands.
