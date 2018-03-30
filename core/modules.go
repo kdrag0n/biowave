@@ -3,6 +3,7 @@ package core
 import (
 	"reflect"
 	"strings"
+	"unsafe"
 )
 
 var modules = make(map[string]Module, 10)
@@ -49,9 +50,12 @@ func RegisterModule(name string, cmdStruct interface{}) {
 	t := reflect.TypeOf(cmdStruct)
 	for f := 0; f < t.NumMethod(); f++ {
 		funk := t.Method(f)
-		callWrap := func(ctx *Context) { // TODO: direct pointer
-			funk.Func.Call([]reflect.Value{reflect.ValueOf(cmdStruct), reflect.ValueOf(ctx)})
-		}
+
+		funcValue := funk.Func
+		funcAddressable := reflect.New(funcValue.Type()).Elem()
+		funcAddressable.Set(funcValue)
+		funcPtr := unsafe.Pointer(funcAddressable.UnsafeAddr())
+		exec := *(*CommandFunc)(funcPtr)
 
 		ctx := &Context{
 			Args: nil,
@@ -68,15 +72,12 @@ func RegisterModule(name string, cmdStruct interface{}) {
 
 		// get information
 		func() {
-			defer func() {
-				recover()
-			}()
-
-			callWrap(ctx)
+			defer func() { recover() }()
+			exec(ctx)
 		}()
 		info := ctx.info
 
-		module.Add(info.name, info.desc, info.aliases, info.usage, info.hidden, info.guildOnly, callWrap)
+		module.Add(info.name, info.desc, info.aliases, info.usage, info.hidden, info.guildOnly, exec)
 	}
 
 	modules[name] = *module
