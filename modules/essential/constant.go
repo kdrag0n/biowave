@@ -8,8 +8,10 @@ func init() {
 	core.RegisterModule("Essential", C{})
 }
 
+// C contains commands.
 type C struct{}
 
+// Test makes sure the bot is working.
 func (C) Test(c *core.Context) {
 	c.Info("Test the bot.")
 
