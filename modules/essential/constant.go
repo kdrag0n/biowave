@@ -5,11 +5,13 @@ import (
 )
 
 func init() {
-	core.RegisterModule("Essential", func(m *core.Module) {
-		m.Add("test", "Test the bot.", nil, cmdTest)
-	})
+	core.RegisterModule("Essential", C{})
 }
 
-func cmdTest(c *core.Context) {
+type C struct{}
+
+func (C) Test(c *core.Context) {
+	c.Info("Test the bot.")
+
 	c.Session.MessageReactionAdd(c.Event.ChannelID, c.Event.ID, "👍")
 }

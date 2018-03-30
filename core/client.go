@@ -136,6 +136,7 @@ func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageC
 				Invoker: commandName,
 				Args:    split[1:],
 				RawArgs: strings.TrimSpace(event.Content[len(prefix)+len(commandName):]),
+				info:    nil,
 			}
 
 			go func() {

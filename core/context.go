@@ -12,6 +12,8 @@ type Context struct {
 	Invoker string
 	Args    []string
 	RawArgs string
+
+	info *cInfo
 }
 
 // Send sends a message to the channel the request came from.
@@ -27,4 +29,21 @@ func (c *Context) Ok(message string) {
 // Fail sends a message to the requesting channel with a prefix indicating failure.
 func (c *Context) Fail(message string) {
 	c.Send(c.Client.EmoteFail + " " + message)
+}
+
+// Info is used to obtain command information.
+func (c *Context) Info(description string, cont ...struct{}) *ChainInfo {
+	if c.info == nil {
+		return nil
+	}
+
+	c.info.desc = description
+
+	if len(cont) == 0 {
+		panic(0)
+	}
+
+	return &ChainInfo{
+		i: c.info,
+	}
 }
