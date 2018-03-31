@@ -37,7 +37,8 @@ func Truncate(message string) string {
 	return m[:len(m)-len(truncateSuffix)] + truncateSuffix
 }
 
-func idToStr(id uint64) string {
+// StrID converts a snowflake ID from uint64 to string.
+func StrID(id uint64) string {
 	if id == 0 {
 		return "@me"
 	}
@@ -45,7 +46,8 @@ func idToStr(id uint64) string {
 	return strconv.FormatUint(id, 10)
 }
 
-func strToID(id string) uint64 {
-	idUint, _ := strconv.ParseUint(id, 10, 64)
+// ParseID parses a snowflake ID from a string into uint64.
+func ParseID(id string) uint64 {
+	idUint, _ := strconv.ParseUint(id, 10, 64) // #nosec
 	return idUint
 }

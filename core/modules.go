@@ -54,7 +54,7 @@ func RegisterModule(name string, cmdStruct interface{}) {
 		funcValue := funk.Func
 		funcAddressable := reflect.New(funcValue.Type()).Elem()
 		funcAddressable.Set(funcValue)
-		funcPtr := unsafe.Pointer(funcAddressable.UnsafeAddr())
+		funcPtr := unsafe.Pointer(funcAddressable.UnsafeAddr()) // #nosec
 		exec := *(*CommandFunc)(funcPtr)
 
 		ctx := &Context{

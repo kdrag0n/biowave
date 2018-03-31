@@ -1,15 +1,15 @@
 package core
 
 import (
-	"sync/atomic"
-	"go.uber.org/zap"
 	"errors"
 	"fmt"
+	"go.uber.org/zap"
 	"strings"
+	"sync/atomic"
 
-	"github.com/kdrag0n/discordgo"
 	"github.com/dgraph-io/badger"
 	"github.com/getsentry/raven-go"
+	"github.com/kdrag0n/discordgo"
 )
 
 // Client is the full client context
@@ -90,12 +90,12 @@ func (c *Client) Start() error {
 		dg.AddHandler(c.OnMessage)
 		dg.AddHandler(func(session *discordgo.Session, event *discordgo.Ready) {
 			defer c.ErrorHandler("ready handler")
-			
+
 			if atomic.LoadUint32(&c.isReady) != 1 {
 				atomic.StoreUint32(&c.isReady, 1)
 
 				// first to be ready
-				sID := idToStr(dg.State.User.ID)
+				sID := StrID(dg.State.User.ID)
 				c.ourMention = "<@" + sID + ">"
 				c.ourGuildMention = "<@!" + sID + ">"
 
@@ -135,7 +135,6 @@ func (c *Client) Stop() {
 	for _, dg := range c.Sessions {
 		dg.Close()
 	}
-	// TODO: unload modules
 }
 
 // OnMessage handles an incoming message.
@@ -218,13 +217,13 @@ func (c *Client) ErrorHandler(scope string) {
 	case nil:
 		return
 	case error:
-		Log.Error("Error in " + scope, zap.Error(rval))
+		Log.Error("Error in "+scope, zap.Error(rval))
 
 		packet := raven.NewPacket(rval.Error(), raven.NewException(rval, raven.NewStacktrace(2, 3, nil)))
 		raven.DefaultClient.Capture(packet, c.SentryTags)
 	default:
 		rvalStr := fmt.Sprint(rval) // stringify
-		Log.Error("Error in " + scope, zap.String("error", rvalStr))
+		Log.Error("Error in "+scope, zap.String("error", rvalStr))
 
 		packet := raven.NewPacket(rvalStr, raven.NewException(errors.New(rvalStr), raven.NewStacktrace(2, 3, nil)))
 		raven.DefaultClient.Capture(packet, c.SentryTags)
