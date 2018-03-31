@@ -1,6 +1,7 @@
 package core
 
 import (
+	"go.uber.org/multierr"
 	"errors"
 	"fmt"
 	"go.uber.org/zap"
@@ -79,12 +80,13 @@ func (c *Client) ForSessions(iter func(*discordgo.Session)) {
 }
 
 // Start initiates the client's connections
-func (c *Client) Start() error {
+func (c *Client) Start() (result error) {
 	c.LoadModules()
-	for _, dg := range c.Sessions {
+	for idx, dg := range c.Sessions {
 		err := dg.Open()
 		if err != nil {
-			return err
+			Log.Error("Error opening session", zap.Int("shard", idx), zap.Error(err))
+			multierr.Append(result, err)
 		}
 
 		dg.AddHandler(c.OnMessage)
@@ -110,10 +112,8 @@ func (c *Client) Start() error {
 
 			_, err = dg.State.Guild(GuildPrivate)
 			if err == nil {
-				c.EmoteOk = "<:ok:428754235799240708>"
-				// c.EmoteOk = "<:ok2:428754249027944458>"
-				c.EmoteFail = "<:fail:428754265486655498>"
-				// c.EmoteFail = "<:fail2:428754276777459712>"
+				c.EmoteOk = "<:ok:428754249027944458>"
+				c.EmoteFail = "<:fail:428754276777459712>"
 				c.EmoteBot = "<:bot:428754293156216834>"
 				c.EmoteGrave = "<:rip:337405147347025930>"
 
@@ -127,14 +127,28 @@ func (c *Client) Start() error {
 		})
 	}
 
-	return nil
+	return result
 }
 
 // Stop stops the client and all associated Discord sessions.
-func (c *Client) Stop() {
-	for _, dg := range c.Sessions {
-		dg.Close()
+func (c *Client) Stop() (result error) {
+	for idx, dg := range c.Sessions {
+		err := dg.Close()
+		if err != nil {
+			Log.Error("Error closing session", zap.Int("shard", idx), zap.Error(err))
+			multierr.Append(result, err)
+		}
 	}
+
+	for _, module := range modules {
+		err := module.Unload(c)
+		if err != nil {
+			Log.Error("Error on module unload", zap.String("module", module.Name), zap.Error(err))
+			multierr.Append(result, err)
+		}
+	}
+
+	return result
 }
 
 // OnMessage handles an incoming message.
@@ -176,15 +190,16 @@ func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageC
 }
 
 // LoadModules loads all the built in modules
-func (c *Client) LoadModules() error {
+func (c *Client) LoadModules() (result error) {
 	for _, module := range modules {
 		err := c.LoadModule(module)
 		if err != nil {
-			return err
+			Log.Error("Error loading module", zap.String("module", module.Name), zap.Error(err))
+			multierr.Append(result, err)
 		}
 	}
 
-	return nil
+	return result
 }
 
 // LoadModule loads a Module

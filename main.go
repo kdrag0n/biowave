@@ -32,6 +32,9 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	core.Log.Info("Stopping.")
+	core.Log.Info("Stopping client.")
 	client.Stop()
+
+	core.Log.Info("Cleaning up modules.")
+	core.ModuleCleanup()
 }
