@@ -2,6 +2,7 @@ package core
 
 import (
 	"strings"
+	"strconv"
 )
 
 const (
@@ -34,4 +35,17 @@ func Truncate(message string) string {
 	}
 
 	return m[:len(m)-len(truncateSuffix)] + truncateSuffix
+}
+
+func idToStr(id uint64) string {
+	if id == 0 {
+		return "@me"
+	}
+
+	return strconv.FormatUint(id, 10)
+}
+
+func strToID(id string) uint64 {
+	idUint, _ := strconv.ParseUint(id, 10, 64)
+	return idUint
 }

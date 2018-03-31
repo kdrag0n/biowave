@@ -1,11 +1,14 @@
 package core
 
 import (
+	"sync/atomic"
+	"go.uber.org/zap"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/kdrag0n/discordgo"
+	"github.com/dgraph-io/badger"
 	"github.com/getsentry/raven-go"
 )
 
@@ -24,7 +27,9 @@ type Client struct {
 
 	ourMention      string
 	ourGuildMention string
-	ownerID         string
+	ownerID         uint64
+
+	isReady uint32
 }
 
 // NewClient creates a new Discord client
@@ -60,7 +65,9 @@ func NewClient(config Config) *Client {
 
 		ourMention:      "<@0>",
 		ourGuildMention: "<@!0>",
-		ownerID:         "0",
+		ownerID:         0,
+
+		isReady: 0,
 	}
 }
 
@@ -82,7 +89,24 @@ func (c *Client) Start() error {
 
 		dg.AddHandler(c.OnMessage)
 		dg.AddHandler(func(session *discordgo.Session, event *discordgo.Ready) {
-			defer c.ErrorHandler()
+			defer c.ErrorHandler("ready handler")
+			
+			if atomic.LoadUint32(&c.isReady) != 1 {
+				atomic.StoreUint32(&c.isReady, 1)
+
+				// first to be ready
+				sID := idToStr(dg.State.User.ID)
+				c.ourMention = "<@" + sID + ">"
+				c.ourGuildMention = "<@!" + sID + ">"
+
+				app, err := dg.Application(dg.State.User.ID)
+				if err != nil {
+					Log.Error("Error getting bot application", zap.Error(err))
+					c.ownerID = UserOriginalOwner
+				} else {
+					c.ownerID = app.Owner.ID
+				}
+			}
 
 			_, err = dg.State.Guild(GuildPrivate)
 			if err == nil {
@@ -116,7 +140,7 @@ func (c *Client) Stop() {
 
 // OnMessage handles an incoming message.
 func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageCreate) {
-	defer c.ErrorHandler()
+	defer c.ErrorHandler("message handler")
 
 	if event.Author.ID == session.State.User.ID {
 		return
@@ -140,7 +164,7 @@ func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageC
 			}
 
 			go func() {
-				defer c.ErrorHandler()
+				defer c.ErrorHandler("command")
 				command.Function(context)
 			}() // TODO: pool
 		}
@@ -187,17 +211,21 @@ func (c *Client) LoadModule(m Module) error {
 }
 
 // ErrorHandler recovers from panics and reports them when deferred
-func (c *Client) ErrorHandler() {
+func (c *Client) ErrorHandler(scope string) {
 	err := recover()
 
 	switch rval := err.(type) {
 	case nil:
 		return
 	case error:
+		Log.Error("Error in " + scope, zap.Error(rval))
+
 		packet := raven.NewPacket(rval.Error(), raven.NewException(rval, raven.NewStacktrace(2, 3, nil)))
 		raven.DefaultClient.Capture(packet, c.SentryTags)
 	default:
 		rvalStr := fmt.Sprint(rval) // stringify
+		Log.Error("Error in " + scope, zap.String("error", rvalStr))
+
 		packet := raven.NewPacket(rvalStr, raven.NewException(errors.New(rvalStr), raven.NewStacktrace(2, 3, nil)))
 		raven.DefaultClient.Capture(packet, c.SentryTags)
 	}
