@@ -2,10 +2,10 @@ package core
 
 // Guild IDs
 const (
-	GuildPrivate = "250780048943087618"
+	GuildPrivate uint64 = 250780048943087618
 )
 
 // User IDs
 const (
-	UserProduction = "239775420470394897"
+	UserProduction uint64 = 239775420470394897
 )
