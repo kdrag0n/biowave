@@ -1,14 +1,14 @@
 package core
 
 import (
-	"go.uber.org/multierr"
 	"errors"
 	"fmt"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"strings"
 	"sync/atomic"
 
-	"github.com/dgraph-io/badger"
+	//"github.com/dgraph-io/badger"
 	"github.com/getsentry/raven-go"
 	"github.com/kdrag0n/discordgo"
 )
@@ -155,7 +155,7 @@ func (c *Client) Stop() (result error) {
 func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageCreate) {
 	defer c.ErrorHandler("message handler")
 
-	if event.Author.ID == session.State.User.ID {
+	if event.Author.ID == session.State.User.ID || len(event.Content) == 1 {
 		return
 	}
 
@@ -179,14 +179,14 @@ func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageC
 			go func() {
 				defer c.ErrorHandler("command")
 				command.Function(context)
-			}() // TODO: pool
+			}()
 		}
 	} else if strings.HasPrefix(event.Content, c.ourMention) || strings.HasPrefix(event.Content, c.ourGuildMention) {
 		request := strings.TrimSpace(event.Content[min(len(event.Content), 22):])
 		if strings.EqualFold(request, "prefix") {
 
 		}
-	} // TODO: private channel
+	} // else if session.State.Channel(channelID uint64)
 }
 
 // LoadModules loads all the built in modules
