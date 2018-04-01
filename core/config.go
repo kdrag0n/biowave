@@ -2,7 +2,6 @@ package core
 
 import (
 	"github.com/go-yaml/yaml"
-	"go.uber.org/zap"
 	"io/ioutil"
 )
 
@@ -10,6 +9,7 @@ import (
 type Config struct {
 	Token         string    `yaml:"token"`
 	DefaultPrefix string    `yaml:"prefix"`
+	DatabasePath  string    `yaml:"database"`
 	Shards        int       `yaml:"shards"`
 	Sentry        bool      `yaml:"-"`
 	Keys          KeyConfig `yaml:"keys"`
@@ -28,19 +28,18 @@ func LoadConfig(path string) (Config, error) {
 	config := Config{
 		Shards:        1,
 		DefaultPrefix: "!",
+		DatabasePath:  "data/db",
 		Sentry:        false,
 		Keys:          KeyConfig{},
 	}
 
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		Log.Error("Error loading config", zap.Error(err))
 		return config, err
 	}
 
 	err = yaml.Unmarshal(bytes, &config)
 	if err != nil {
-		Log.Error("Error loading config", zap.Error(err))
 		return config, err
 	}
 

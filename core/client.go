@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	//"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger"
 	"github.com/getsentry/raven-go"
 	"github.com/kdrag0n/discordgo"
 )
@@ -19,6 +19,10 @@ type Client struct {
 	SentryTags map[string]string
 	Sessions   []*discordgo.Session
 	Commands   map[string]*Command
+	
+	// Data
+	DB *badger.DB
+	IsDBClosed bool
 
 	// Emotes
 	EmoteOk    string
@@ -34,10 +38,22 @@ type Client struct {
 }
 
 // NewClient creates a new Discord client
-func NewClient(config Config) *Client {
-	sessions := make([]*discordgo.Session, config.Shards)
+func NewClient(config Config) (*Client, error) {
+	// verify config
+
+	// open database
+	opts := badger.DefaultOptions
+	opts.Dir = config.DatabasePath
+	opts.ValueDir = config.DatabasePath
+
+	db, err := badger.Open(opts)
+	if err != nil {
+		return nil, err
+	}
 
 	// create DiscordGo sessions for shards
+	sessions := make([]*discordgo.Session, config.Shards)
+
 	for id := range sessions {
 		dg, _ := discordgo.New() // error is impossible
 		dg.Token = "Bot " + config.Token
@@ -59,6 +75,9 @@ func NewClient(config Config) *Client {
 		Sessions:   sessions,
 		Commands:   make(map[string]*Command, 120),
 
+		DB: db,
+		IsDBClosed: false,
+
 		EmoteOk:    "✅",
 		EmoteFail:  "❌",
 		EmoteGrave: "⚰",
@@ -69,7 +88,7 @@ func NewClient(config Config) *Client {
 		ownerID:         0,
 
 		isReady: 0,
-	}
+	}, nil
 }
 
 // ForSessions executes a function with every session
@@ -82,6 +101,7 @@ func (c *Client) ForSessions(iter func(*discordgo.Session)) {
 // Start initiates the client's connections
 func (c *Client) Start() (result error) {
 	c.LoadModules()
+
 	for idx, dg := range c.Sessions {
 		err := dg.Open()
 		if err != nil {
@@ -132,6 +152,7 @@ func (c *Client) Start() (result error) {
 
 // Stop stops the client and all associated Discord sessions.
 func (c *Client) Stop() (result error) {
+	// close sessions
 	for idx, dg := range c.Sessions {
 		err := dg.Close()
 		if err != nil {
@@ -140,6 +161,7 @@ func (c *Client) Stop() (result error) {
 		}
 	}
 
+	// unload modules
 	for _, module := range modules {
 		err := module.Unload(c)
 		if err != nil {
@@ -147,6 +169,14 @@ func (c *Client) Stop() (result error) {
 			multierr.Append(result, err)
 		}
 	}
+
+	// close database
+	err := c.DB.Close()
+	if err != nil {
+		Log.Error("Error closing database", zap.Error(err))
+		multierr.Append(result, err)
+	}
+	c.IsDBClosed = true
 
 	return result
 }
