@@ -10,7 +10,7 @@
 
 [[constraint]]
   name = "github.com/go-yaml/yaml"
-  branch = "master"
+  branch = "v2"
 
 [[constraint]]
   name = "github.com/kdrag0n/discordgo"
