@@ -14,6 +14,7 @@
   version = "2018.01.18"
 
 [[projects]]
+  branch = "master"
   name = "github.com/dgraph-io/badger"
   packages = [
     ".",
@@ -23,8 +24,7 @@
     "table",
     "y"
   ]
-  revision = "69611218c7078be6de16f4ea13fb256e701b6b73"
-  version = "v1.3.0"
+  revision = "a39f9e06de643cd1edbc85492b18fec552fc7c7e"
 
 [[projects]]
   branch = "master"
@@ -39,10 +39,10 @@
   revision = "7562301a6763c9ac631b0a2011b4aa0e064e45d4"
 
 [[projects]]
+  branch = "master"
   name = "github.com/go-yaml/yaml"
   packages = ["."]
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
+  revision = "bec87e4332aede01fb63a4ab299d8af28480cd96"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -93,12 +93,13 @@
   version = "v1.3.1"
 
 [[projects]]
+  branch = "master"
   name = "go.uber.org/multierr"
   packages = ["."]
-  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
-  version = "v1.1.0"
+  revision = "ddea229ff1dff9e6fe8a6c0344ac73b09e81fce5"
 
 [[projects]]
+  branch = "master"
   name = "go.uber.org/zap"
   packages = [
     ".",
@@ -108,8 +109,7 @@
     "internal/exit",
     "zapcore"
   ]
-  revision = "35aad584952c3e7020db7b839f6b102de6271f89"
-  version = "v1.7.1"
+  revision = "f85c78b1dd998214c5f2138155b320a4a43fbe36"
 
 [[projects]]
   branch = "master"
@@ -140,6 +140,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6a8d9dc7672055e93a7791eadd3247334421f07faefca45f6e8f74f29ff71270"
+  inputs-digest = "dca435fbe315c32de898d8dcd079cb2e14d767c0d7418ba9c3f0b6f28c55f91d"
   solver-name = "gps-cdcl"
   solver-version = 1
