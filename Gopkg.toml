@@ -13,10 +13,6 @@
   version = "2.2.1"
 
 [[constraint]]
-  name = "github.com/kdrag0n/discordgo"
-  version = "0.18.0"
-
-[[constraint]]
   name = "go.uber.org/multierr"
   version = "1.1.0"
 
