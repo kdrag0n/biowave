@@ -40,6 +40,15 @@ type Client struct {
 // NewClient creates a new Discord client
 func NewClient(config Config) (*Client, error) {
 	// verify config
+	if l := len(config.Token); l < 56 || l > 64 {
+		return nil, errors.New("Invalid token")
+	} else if config.Shards < 1 || config.Shards == 2 {
+		return nil, errors.New("Invalid shard count, cannot be 2 or below 1")
+	} else if len(config.DatabasePath) == 0 {
+		return nil, errors.New("Invalid database path")
+	} else if l := len(config.DefaultPrefix); l == 0 || l > 32 {
+		return nil, errors.New("Invalid default prefix, empty or over 32 characters")
+	}
 
 	// open database
 	opts := badger.DefaultOptions
