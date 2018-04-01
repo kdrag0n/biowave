@@ -40,9 +40,9 @@ type State struct {
 	TrackVoice      bool
 	TrackPresences  bool
 
-	guildMap   map[string]*Guild
-	channelMap map[string]*Channel
-	memberMap  map[string]map[string]*Member
+	guildMap   map[uint64]*Guild
+	channelMap map[uint64]*Channel
+	memberMap  map[uint64]map[uint64]*Member
 }
 
 // NewState creates an empty state.
@@ -58,14 +58,14 @@ func NewState() *State {
 		TrackRoles:     true,
 		TrackVoice:     true,
 		TrackPresences: true,
-		guildMap:       make(map[string]*Guild),
-		channelMap:     make(map[string]*Channel),
-		memberMap:      make(map[string]map[string]*Member),
+		guildMap:       make(map[uint64]*Guild),
+		channelMap:     make(map[uint64]*Channel),
+		memberMap:      make(map[uint64]map[uint64]*Member),
 	}
 }
 
 func (s *State) createMemberMap(guild *Guild) {
-	members := make(map[string]*Member)
+	members := make(map[uint64]*Member)
 	for _, m := range guild.Members {
 		members[m.User.ID] = m
 	}
@@ -92,7 +92,7 @@ func (s *State) GuildAdd(guild *Guild) error {
 		s.createMemberMap(guild)
 	} else if _, ok := s.memberMap[guild.ID]; !ok {
 		// Even if we have no new member slice, we still initialize the member map for this guild if it doesn't exist
-		s.memberMap[guild.ID] = make(map[string]*Member)
+		s.memberMap[guild.ID] = make(map[uint64]*Member)
 	}
 
 	if g, ok := s.guildMap[guild.ID]; ok {
@@ -156,7 +156,7 @@ func (s *State) GuildRemove(guild *Guild) error {
 // Useful for querying if @me is in a guild:
 //     _, err := discordgo.Session.State.Guild(guildID)
 //     isInGuild := err == nil
-func (s *State) Guild(guildID string) (*Guild, error) {
+func (s *State) Guild(guildID uint64) (*Guild, error) {
 	if s == nil {
 		return nil, ErrNilState
 	}
@@ -173,7 +173,7 @@ func (s *State) Guild(guildID string) (*Guild, error) {
 
 // PresenceAdd adds a presence to the current world state, or
 // updates it if it already exists.
-func (s *State) PresenceAdd(guildID string, presence *Presence) error {
+func (s *State) PresenceAdd(guildID uint64, presence *Presence) error {
 	if s == nil {
 		return ErrNilState
 	}
@@ -229,7 +229,7 @@ func (s *State) PresenceAdd(guildID string, presence *Presence) error {
 }
 
 // PresenceRemove removes a presence from the current world state.
-func (s *State) PresenceRemove(guildID string, presence *Presence) error {
+func (s *State) PresenceRemove(guildID uint64, presence *Presence) error {
 	if s == nil {
 		return ErrNilState
 	}
@@ -253,7 +253,7 @@ func (s *State) PresenceRemove(guildID string, presence *Presence) error {
 }
 
 // Presence gets a presence by ID from a guild.
-func (s *State) Presence(guildID, userID string) (*Presence, error) {
+func (s *State) Presence(guildID, userID uint64) (*Presence, error) {
 	if s == nil {
 		return nil, ErrNilState
 	}
@@ -341,7 +341,7 @@ func (s *State) MemberRemove(member *Member) error {
 }
 
 // Member gets a member by ID from a guild.
-func (s *State) Member(guildID, userID string) (*Member, error) {
+func (s *State) Member(guildID, userID uint64) (*Member, error) {
 	if s == nil {
 		return nil, ErrNilState
 	}
@@ -364,7 +364,7 @@ func (s *State) Member(guildID, userID string) (*Member, error) {
 
 // RoleAdd adds a role to the current world state, or
 // updates it if it already exists.
-func (s *State) RoleAdd(guildID string, role *Role) error {
+func (s *State) RoleAdd(guildID uint64, role *Role) error {
 	if s == nil {
 		return ErrNilState
 	}
@@ -389,7 +389,7 @@ func (s *State) RoleAdd(guildID string, role *Role) error {
 }
 
 // RoleRemove removes a role from current world state by ID.
-func (s *State) RoleRemove(guildID, roleID string) error {
+func (s *State) RoleRemove(guildID, roleID uint64) error {
 	if s == nil {
 		return ErrNilState
 	}
@@ -413,7 +413,7 @@ func (s *State) RoleRemove(guildID, roleID string) error {
 }
 
 // Role gets a role by ID from a guild.
-func (s *State) Role(guildID, roleID string) (*Role, error) {
+func (s *State) Role(guildID, roleID uint64) (*Role, error) {
 	if s == nil {
 		return nil, ErrNilState
 	}
@@ -521,18 +521,18 @@ func (s *State) ChannelRemove(channel *Channel) error {
 
 // GuildChannel gets a channel by ID from a guild.
 // This method is Deprecated, use Channel(channelID)
-func (s *State) GuildChannel(guildID, channelID string) (*Channel, error) {
+func (s *State) GuildChannel(guildID, channelID uint64) (*Channel, error) {
 	return s.Channel(channelID)
 }
 
 // PrivateChannel gets a private channel by ID.
 // This method is Deprecated, use Channel(channelID)
-func (s *State) PrivateChannel(channelID string) (*Channel, error) {
+func (s *State) PrivateChannel(channelID uint64) (*Channel, error) {
 	return s.Channel(channelID)
 }
 
 // Channel gets a channel by ID, it will look in all guilds and private channels.
-func (s *State) Channel(channelID string) (*Channel, error) {
+func (s *State) Channel(channelID uint64) (*Channel, error) {
 	if s == nil {
 		return nil, ErrNilState
 	}
@@ -548,7 +548,7 @@ func (s *State) Channel(channelID string) (*Channel, error) {
 }
 
 // Emoji returns an emoji for a guild and emoji id.
-func (s *State) Emoji(guildID, emojiID string) (*Emoji, error) {
+func (s *State) Emoji(guildID uint64, emojiID string) (*Emoji, error) {
 	if s == nil {
 		return nil, ErrNilState
 	}
@@ -571,7 +571,7 @@ func (s *State) Emoji(guildID, emojiID string) (*Emoji, error) {
 }
 
 // EmojiAdd adds an emoji to the current world state.
-func (s *State) EmojiAdd(guildID string, emoji *Emoji) error {
+func (s *State) EmojiAdd(guildID uint64, emoji *Emoji) error {
 	if s == nil {
 		return ErrNilState
 	}
@@ -596,7 +596,7 @@ func (s *State) EmojiAdd(guildID string, emoji *Emoji) error {
 }
 
 // EmojisAdd adds multiple emojis to the world state.
-func (s *State) EmojisAdd(guildID string, emojis []*Emoji) error {
+func (s *State) EmojisAdd(guildID uint64, emojis []*Emoji) error {
 	for _, e := range emojis {
 		if err := s.EmojiAdd(guildID, e); err != nil {
 			return err
@@ -668,7 +668,7 @@ func (s *State) MessageRemove(message *Message) error {
 }
 
 // messageRemoveByID removes a message by channelID and messageID from the world state.
-func (s *State) messageRemoveByID(channelID, messageID string) error {
+func (s *State) messageRemoveByID(channelID, messageID uint64) error {
 	c, err := s.Channel(channelID)
 	if err != nil {
 		return err
@@ -719,7 +719,7 @@ func (s *State) voiceStateUpdate(update *VoiceStateUpdate) error {
 }
 
 // Message gets a message by channel and message ID.
-func (s *State) Message(channelID, messageID string) (*Message, error) {
+func (s *State) Message(channelID, messageID uint64) (*Message, error) {
 	if s == nil {
 		return nil, ErrNilState
 	}
@@ -920,7 +920,7 @@ func (s *State) OnInterface(se *Session, i interface{}) (err error) {
 // UserChannelPermissions returns the permission of a user in a channel.
 // userID    : The ID of the user to calculate permissions for.
 // channelID : The ID of the channel to calculate permission for.
-func (s *State) UserChannelPermissions(userID, channelID string) (apermissions int, err error) {
+func (s *State) UserChannelPermissions(userID, channelID uint64) (apermissions int, err error) {
 	if s == nil {
 		return 0, ErrNilState
 	}
@@ -953,7 +953,7 @@ func (s *State) UserChannelPermissions(userID, channelID string) (apermissions i
 // 0 is returned in cases of error, which is the color of @everyone.
 // userID    : The ID of the user to calculate the color for.
 // channelID   : The ID of the channel to calculate the color for.
-func (s *State) UserColor(userID, channelID string) int {
+func (s *State) UserColor(userID, channelID uint64) int {
 	if s == nil {
 		return 0
 	}

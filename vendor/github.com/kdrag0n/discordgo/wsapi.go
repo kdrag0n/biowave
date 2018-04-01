@@ -13,7 +13,6 @@ package discordgo
 import (
 	"bytes"
 	"compress/zlib"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -41,7 +40,7 @@ type resumePacket struct {
 	Op   int `json:"op"`
 	Data struct {
 		Token     string `json:"token"`
-		SessionID string `json:"session_id"`
+		SessionID string `json:"session_id,string"`
 		Sequence  int64  `json:"seq"`
 	} `json:"d"`
 }
@@ -122,7 +121,6 @@ func (s *Session) Open() error {
 	// connection or Op 6 Resume if we are resuming an existing connection.
 	sequence := atomic.LoadInt64(s.sequence)
 	if s.sessionID == "" && sequence == 0 {
-
 		// Send Op 2 Identity Packet
 		err = s.identify()
 		if err != nil {
@@ -186,7 +184,7 @@ func (s *Session) Open() error {
 	// XXX: can this be moved to when opening a voice connection?
 	if s.VoiceConnections == nil {
 		s.log(LogInformational, "creating new VoiceConnections map")
-		s.VoiceConnections = make(map[string]*VoiceConnection)
+		s.VoiceConnections = make(map[uint64]*VoiceConnection)
 	}
 
 	// Create listening chan outside of listen, as it needs to happen inside the
@@ -380,7 +378,7 @@ func (s *Session) UpdateStatus(idle int, game string) (err error) {
 }
 
 type requestGuildMembersData struct {
-	GuildID string `json:"guild_id"`
+	GuildID uint64 `json:"guild_id,string"`
 	Query   string `json:"query"`
 	Limit   int    `json:"limit"`
 }
@@ -395,7 +393,7 @@ type requestGuildMembersOp struct {
 // guildID  : The ID of the guild to request members of
 // query    : String that username starts with, leave empty to return all members
 // limit    : Max number of items to return, or 0 to request all members matched
-func (s *Session) RequestGuildMembers(guildID, query string, limit int) (err error) {
+func (s *Session) RequestGuildMembers(guildID uint64, query string, limit int) (err error) {
 	s.log(LogInformational, "called")
 
 	s.RLock()
@@ -532,6 +530,30 @@ func (s *Session) onEvent(messageType int, message []byte) (*Event, error) {
 			s.log(LogError, "error unmarshalling %s event, %s", e.Type, err)
 		}
 
+		switch val := e.Struct.(type) {
+		case *PresenceUpdate:
+			val.Roles = make([]uint64, len(val.RawRoles))
+			for i, id := range val.RawRoles {
+				val.Roles[i] = strToID(id)
+			}
+
+			val.RawRoles = nil
+		case *MessageDeleteBulk:
+			val.Messages = make([]uint64, len(val.RawMessages))
+			for i, id := range val.RawMessages {
+				val.Messages[i] = strToID(id)
+			}
+
+			val.RawMessages = nil
+		case *Member:
+			val.Roles = make([]uint64, len(val.RawRoles))
+			for i, id := range val.RawRoles {
+				val.Roles[i] = strToID(id)
+			}
+
+			val.RawRoles = nil
+		}
+
 		// Send event to any registered event handlers for it's type.
 		// Because the above doesn't cancel this, in case of an error
 		// the struct could be partially populated or at default values.
@@ -555,8 +577,8 @@ func (s *Session) onEvent(messageType int, message []byte) (*Event, error) {
 // ------------------------------------------------------------------------------------------------
 
 type voiceChannelJoinData struct {
-	GuildID   *string `json:"guild_id"`
-	ChannelID *string `json:"channel_id"`
+	GuildID   *uint64 `json:"guild_id"`
+	ChannelID *uint64 `json:"channel_id"`
 	SelfMute  bool    `json:"self_mute"`
 	SelfDeaf  bool    `json:"self_deaf"`
 }
@@ -572,7 +594,7 @@ type voiceChannelJoinOp struct {
 //    cID     : Channel ID of the channel to join.
 //    mute    : If true, you will be set to muted upon joining.
 //    deaf    : If true, you will be set to deafened upon joining.
-func (s *Session) ChannelVoiceJoin(gID, cID string, mute, deaf bool) (voice *VoiceConnection, err error) {
+func (s *Session) ChannelVoiceJoin(gID, cID uint64, mute, deaf bool) (voice *VoiceConnection, err error) {
 
 	s.log(LogInformational, "called")
 
@@ -589,7 +611,7 @@ func (s *Session) ChannelVoiceJoin(gID, cID string, mute, deaf bool) (voice *Voi
 
 	voice.Lock()
 	voice.GuildID = gID
-	voice.ChannelID = cID
+	voice.ChannelID = idToStr(cID)
 	voice.deaf = deaf
 	voice.mute = mute
 	voice.session = s

@@ -12,7 +12,6 @@
 package discordgo
 
 import (
-	"encoding/json"
 	"net/http"
 	"sync"
 	"time"
@@ -71,8 +70,8 @@ type Session struct {
 	// Whether the UDP Connection is ready
 	UDPReady bool // NOTE: Deprecated
 
-	// Stores a mapping of guild id's to VoiceConnections
-	VoiceConnections map[string]*VoiceConnection
+	// Stores a mapping of guild IDs to VoiceConnections
+	VoiceConnections map[uint64]*VoiceConnection
 
 	// Managed state object, updated internally with events when
 	// StateEnabled is true.
@@ -161,8 +160,8 @@ const (
 
 // A Channel holds all data related to an individual Discord channel.
 type Channel struct {
-	ID                   string                 `json:"id"`
-	GuildID              string                 `json:"guild_id"`
+	ID                   uint64                 `json:"id,string"`
+	GuildID              uint64                 `json:"guild_id,string"`
 	Name                 string                 `json:"name"`
 	Topic                string                 `json:"topic"`
 	Type                 ChannelType            `json:"type"`
@@ -185,18 +184,18 @@ type ChannelEdit struct {
 	Bitrate              int                    `json:"bitrate,omitempty"`
 	UserLimit            int                    `json:"user_limit,omitempty"`
 	PermissionOverwrites []*PermissionOverwrite `json:"permission_overwrites,omitempty"`
-	ParentID             string                 `json:"parent_id,omitempty"`
+	ParentID             uint64                 `json:"parent_id,omitempty,string"`
 }
 
 // A PermissionOverwrite holds permission overwrite data for a Channel
 type PermissionOverwrite struct {
-	ID    string `json:"id"`
+	ID    uint64 `json:"id,string"`
 	Type  string `json:"type"`
 	Deny  int    `json:"deny"`
 	Allow int    `json:"allow"`
 }
 
-// Emoji struct holds data related to Emoji's
+// Emoji struct holds data related to Emojis
 type Emoji struct {
 	ID            string   `json:"id"`
 	Name          string   `json:"name"`
@@ -228,16 +227,16 @@ const (
 	VerificationLevelHigh
 )
 
-// A Guild holds all data related to a specific Discord Guild.  Guilds are also
-// sometimes referred to as Servers in the Discord client.
+// A Guild holds all data related to a specific Discord Guild.  Guilds are
+// referred to as Servers in the Discord client.
 type Guild struct {
-	ID                          string            `json:"id"`
+	ID                          uint64            `json:"id,string"`
 	Name                        string            `json:"name"`
 	Icon                        string            `json:"icon"`
 	Region                      string            `json:"region"`
 	AfkChannelID                string            `json:"afk_channel_id"`
-	EmbedChannelID              string            `json:"embed_channel_id"`
-	OwnerID                     string            `json:"owner_id"`
+	EmbedChannelID              uint64            `json:"embed_channel_id,string"`
+	OwnerID                     uint64            `json:"owner_id,string"`
 	JoinedAt                    Timestamp         `json:"joined_at"`
 	Splash                      string            `json:"splash"`
 	AfkTimeout                  int               `json:"afk_timeout"`
@@ -257,7 +256,7 @@ type Guild struct {
 
 // A UserGuild holds a brief version of a Guild
 type UserGuild struct {
-	ID          string `json:"id"`
+	ID          uint64 `json:"id,string"`
 	Name        string `json:"name"`
 	Icon        string `json:"icon"`
 	Owner       bool   `json:"owner"`
@@ -270,16 +269,16 @@ type GuildParams struct {
 	Region                      string             `json:"region,omitempty"`
 	VerificationLevel           *VerificationLevel `json:"verification_level,omitempty"`
 	DefaultMessageNotifications int                `json:"default_message_notifications,omitempty"` // TODO: Separate type?
-	AfkChannelID                string             `json:"afk_channel_id,omitempty"`
+	AfkChannelID                uint64             `json:"afk_channel_id,omitempty,string"`
 	AfkTimeout                  int                `json:"afk_timeout,omitempty"`
 	Icon                        string             `json:"icon,omitempty"`
-	OwnerID                     string             `json:"owner_id,omitempty"`
+	OwnerID                     uint64             `json:"owner_id,omitempty,string"`
 	Splash                      string             `json:"splash,omitempty"`
 }
 
 // A Role stores information about Discord guild member roles.
 type Role struct {
-	ID          string `json:"id"`
+	ID          uint64 `json:"id,string"`
 	Name        string `json:"name"`
 	Managed     bool   `json:"managed"`
 	Mentionable bool   `json:"mentionable"`
@@ -306,10 +305,10 @@ func (r Roles) Swap(i, j int) {
 
 // A VoiceState stores the voice states of Guilds
 type VoiceState struct {
-	UserID    string `json:"user_id"`
+	UserID    uint64 `json:"user_id,string"`
 	SessionID string `json:"session_id"`
 	ChannelID string `json:"channel_id"`
-	GuildID   string `json:"guild_id"`
+	GuildID   uint64 `json:"guild_id,string"`
 	Suppress  bool   `json:"suppress"`
 	SelfMute  bool   `json:"self_mute"`
 	SelfDeaf  bool   `json:"self_deaf"`
@@ -345,7 +344,7 @@ type Game struct {
 	State         string     `json:"state,omitempty"`
 	TimeStamps    TimeStamps `json:"timestamps,omitempty"`
 	Assets        Assets     `json:"assets,omitempty"`
-	ApplicationID string     `json:"application_id,omitempty"`
+	ApplicationID uint64     `json:"application_id,omitempty,string"`
 	Instance      int8       `json:"instance,omitempty"`
 	// TODO: Party and Secrets (unknown structure)
 }
@@ -381,13 +380,14 @@ type Assets struct {
 
 // A Member stores user information for Guild members.
 type Member struct {
-	GuildID  string   `json:"guild_id"`
+	GuildID  uint64   `json:"guild_id,string"`
 	JoinedAt string   `json:"joined_at"`
 	Nick     string   `json:"nick"`
 	Deaf     bool     `json:"deaf"`
 	Mute     bool     `json:"mute"`
 	User     *User    `json:"user"`
-	Roles    []string `json:"roles"`
+	Roles    []uint64 `json:"-"`
+	RawRoles []string `json:"roles"`
 }
 
 // A Settings stores data for a specific users Discord client settings.
@@ -432,7 +432,7 @@ type FriendSourceFlags struct {
 type Relationship struct {
 	User *User  `json:"user"`
 	Type int    `json:"type"` // 1 = friend, 2 = blocked, 3 = incoming friend req, 4 = sent friend req
-	ID   string `json:"id"`
+	ID   uint64 `json:"id,string"`
 }
 
 // A TooManyRequests struct holds information received from Discord
@@ -446,8 +446,8 @@ type TooManyRequests struct {
 // A ReadState stores data on the read state of channels.
 type ReadState struct {
 	MentionCount  int    `json:"mention_count"`
-	LastMessageID string `json:"last_message_id"`
-	ID            string `json:"id"`
+	LastMessageID uint64 `json:"last_message_id,string"`
+	ID            uint64 `json:"id,string"`
 }
 
 // An Ack is used to ack messages
@@ -458,7 +458,7 @@ type Ack struct {
 // A GuildRole stores data for guild roles.
 type GuildRole struct {
 	Role    *Role  `json:"role"`
-	GuildID string `json:"guild_id"`
+	GuildID uint64 `json:"guild_id,string"`
 }
 
 // A GuildBan stores data for a guild ban.
@@ -469,12 +469,12 @@ type GuildBan struct {
 
 // A GuildIntegration stores data for a guild integration.
 type GuildIntegration struct {
-	ID                string                   `json:"id"`
+	ID                uint64                   `json:"id,string"`
 	Name              string                   `json:"name"`
 	Type              string                   `json:"type"`
 	Enabled           bool                     `json:"enabled"`
 	Syncing           bool                     `json:"syncing"`
-	RoleID            string                   `json:"role_id"`
+	RoleID            uint64                   `json:"role_id,string"`
 	ExpireBehavior    int                      `json:"expire_behavior"`
 	ExpireGracePeriod int                      `json:"expire_grace_period"`
 	User              *User                    `json:"user"`
@@ -484,21 +484,21 @@ type GuildIntegration struct {
 
 // A GuildIntegrationAccount stores data for a guild integration account.
 type GuildIntegrationAccount struct {
-	ID   string `json:"id"`
+	ID   uint64 `json:"id,string"`
 	Name string `json:"name"`
 }
 
 // A GuildEmbed stores data for a guild embed.
 type GuildEmbed struct {
 	Enabled   bool   `json:"enabled"`
-	ChannelID string `json:"channel_id"`
+	ChannelID uint64 `json:"channel_id,string"`
 }
 
 // A UserGuildSettingsChannelOverride stores data for a channel override for a users guild settings.
 type UserGuildSettingsChannelOverride struct {
 	Muted                bool   `json:"muted"`
 	MessageNotifications int    `json:"message_notifications"`
-	ChannelID            string `json:"channel_id"`
+	ChannelID            uint64 `json:"channel_id,string"`
 }
 
 // A UserGuildSettings stores data for a users guild settings.
@@ -507,7 +507,7 @@ type UserGuildSettings struct {
 	Muted                bool                                `json:"muted"`
 	MobilePush           bool                                `json:"mobile_push"`
 	MessageNotifications int                                 `json:"message_notifications"`
-	GuildID              string                              `json:"guild_id"`
+	GuildID              uint64                              `json:"guild_id,string"`
 	ChannelOverrides     []*UserGuildSettingsChannelOverride `json:"channel_overrides"`
 }
 
@@ -528,9 +528,9 @@ type APIErrorMessage struct {
 
 // Webhook stores the data for a webhook.
 type Webhook struct {
-	ID        string `json:"id"`
-	GuildID   string `json:"guild_id"`
-	ChannelID string `json:"channel_id"`
+	ID        uint64 `json:"id,string"`
+	GuildID   uint64 `json:"guild_id,string"`
+	ChannelID uint64 `json:"channel_id,string"`
 	User      *User  `json:"user"`
 	Name      string `json:"name"`
 	Avatar    string `json:"avatar"`
@@ -549,10 +549,10 @@ type WebhookParams struct {
 
 // MessageReaction stores the data for a message reaction.
 type MessageReaction struct {
-	UserID    string `json:"user_id"`
-	MessageID string `json:"message_id"`
+	UserID    uint64 `json:"user_id,string"`
+	MessageID uint64 `json:"message_id,string"`
 	Emoji     Emoji  `json:"emoji"`
-	ChannelID string `json:"channel_id"`
+	ChannelID uint64 `json:"channel_id,string"`
 }
 
 // GatewayBotResponse stores the data for the gateway/bot response

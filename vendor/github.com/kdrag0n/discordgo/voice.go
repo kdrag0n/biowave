@@ -11,7 +11,6 @@ package discordgo
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
@@ -33,8 +32,8 @@ type VoiceConnection struct {
 	Debug        bool // If true, print extra logging -- DEPRECATED
 	LogLevel     int
 	Ready        bool // If true, voice is ready to send/receive audio
-	UserID       string
-	GuildID      string
+	UserID       uint64
+	GuildID      uint64
 	ChannelID    string
 	deaf         bool
 	mute         bool
@@ -114,7 +113,7 @@ func (v *VoiceConnection) Speaking(b bool) (err error) {
 
 // ChangeChannel sends Discord a request to change channels within a Guild
 // !!! NOTE !!! This function may be removed in favour of just using ChannelVoiceJoin
-func (v *VoiceConnection) ChangeChannel(channelID string, mute, deaf bool) (err error) {
+func (v *VoiceConnection) ChangeChannel(channelID uint64, mute, deaf bool) (err error) {
 
 	v.log(LogInformational, "called")
 
@@ -125,7 +124,7 @@ func (v *VoiceConnection) ChangeChannel(channelID string, mute, deaf bool) (err 
 	if err != nil {
 		return
 	}
-	v.ChannelID = channelID
+	v.ChannelID = idToStr(channelID)
 	v.deaf = deaf
 	v.mute = mute
 	v.speaking = false
@@ -220,7 +219,7 @@ func (v *VoiceConnection) AddHandler(h VoiceSpeakingUpdateHandler) {
 
 // VoiceSpeakingUpdate is a struct for a VoiceSpeakingUpdate event.
 type VoiceSpeakingUpdate struct {
-	UserID   string `json:"user_id"`
+	UserID   uint64 `json:"user_id,string"`
 	SSRC     int    `json:"ssrc"`
 	Speaking bool   `json:"speaking"`
 }
@@ -309,8 +308,8 @@ func (v *VoiceConnection) open() (err error) {
 	}
 
 	type voiceHandshakeData struct {
-		ServerID  string `json:"server_id"`
-		UserID    string `json:"user_id"`
+		ServerID  uint64 `json:"server_id,string"`
+		UserID    uint64 `json:"user_id,string"`
 		SessionID string `json:"session_id"`
 		Token     string `json:"token"`
 	}
@@ -863,7 +862,7 @@ func (v *VoiceConnection) reconnect() {
 
 		v.log(LogInformational, "trying to reconnect to channel %s", v.ChannelID)
 
-		_, err := v.session.ChannelVoiceJoin(v.GuildID, v.ChannelID, v.mute, v.deaf)
+		_, err := v.session.ChannelVoiceJoin(v.GuildID, strToID(v.ChannelID), v.mute, v.deaf)
 		if err == nil {
 			v.log(LogInformational, "successfully reconnected to channel %s", v.ChannelID)
 			return

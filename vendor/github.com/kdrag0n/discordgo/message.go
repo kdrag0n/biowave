@@ -32,12 +32,12 @@ const (
 
 // A Message stores all data related to a specific Discord message.
 type Message struct {
-	ID              string               `json:"id"`
-	ChannelID       string               `json:"channel_id"`
+	ID              uint64               `json:"id,string"`
+	ChannelID       uint64               `json:"channel_id,string"`
 	Content         string               `json:"content"`
 	Timestamp       Timestamp            `json:"timestamp"`
 	EditedTimestamp Timestamp            `json:"edited_timestamp"`
-	MentionRoles    []string             `json:"mention_roles"`
+	MentionRoles    []uint64             `json:"mention_roles"`
 	Tts             bool                 `json:"tts"`
 	MentionEveryone bool                 `json:"mention_everyone"`
 	Author          *User                `json:"author"`
@@ -72,13 +72,13 @@ type MessageEdit struct {
 	Content *string       `json:"content,omitempty"`
 	Embed   *MessageEmbed `json:"embed,omitempty"`
 
-	ID      string
-	Channel string
+	ID      uint64
+	Channel uint64
 }
 
 // NewMessageEdit returns a MessageEdit struct, initialized
 // with the Channel and ID.
-func NewMessageEdit(channelID string, messageID string) *MessageEdit {
+func NewMessageEdit(channelID uint64, messageID uint64) *MessageEdit {
 	return &MessageEdit{
 		Channel: channelID,
 		ID:      messageID,
@@ -101,7 +101,7 @@ func (m *MessageEdit) SetEmbed(embed *MessageEmbed) *MessageEdit {
 
 // A MessageAttachment stores data for message attachments.
 type MessageAttachment struct {
-	ID       string `json:"id"`
+	ID       uint64 `json:"id,string"`
 	URL      string `json:"url"`
 	ProxyURL string `json:"proxy_url"`
 	Filename string `json:"filename"`
@@ -193,8 +193,8 @@ func (m *Message) ContentWithMentionsReplaced() (content string) {
 
 	for _, user := range m.Mentions {
 		content = strings.NewReplacer(
-			"<@"+user.ID+">", "@"+user.Username,
-			"<@!"+user.ID+">", "@"+user.Username,
+			"<@"+idToStr(user.ID)+">", "@"+user.Username,
+			"<@!"+idToStr(user.ID)+">", "@"+user.Username,
 		).Replace(content)
 	}
 	return
@@ -227,8 +227,8 @@ func (m *Message) ContentWithMoreMentionsReplaced(s *Session) (content string, e
 		}
 
 		content = strings.NewReplacer(
-			"<@"+user.ID+">", "@"+user.Username,
-			"<@!"+user.ID+">", "@"+nick,
+			"<@"+idToStr(user.ID)+">", "@"+user.Username,
+			"<@!"+idToStr(user.ID)+">", "@"+nick,
 		).Replace(content)
 	}
 	for _, roleID := range m.MentionRoles {
@@ -237,11 +237,11 @@ func (m *Message) ContentWithMoreMentionsReplaced(s *Session) (content string, e
 			continue
 		}
 
-		content = strings.Replace(content, "<&"+role.ID+">", "@"+role.Name, -1)
+		content = strings.Replace(content, "<&"+idToStr(role.ID)+">", "@"+role.Name, -1)
 	}
 
 	content = patternChannels.ReplaceAllStringFunc(content, func(mention string) string {
-		channel, err := s.State.Channel(mention[2 : len(mention)-1])
+		channel, err := s.State.Channel(strToID(mention[2 : len(mention)-1]))
 		if err != nil || channel.Type == ChannelTypeGuildVoice {
 			return mention
 		}

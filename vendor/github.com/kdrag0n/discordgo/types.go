@@ -10,7 +10,7 @@
 package discordgo
 
 import (
-	"encoding/json"
+	"strconv"
 	"fmt"
 	"net/http"
 	"time"
@@ -55,4 +55,17 @@ func newRestError(req *http.Request, resp *http.Response, body []byte) *RESTErro
 
 func (r RESTError) Error() string {
 	return fmt.Sprintf("HTTP %s, %s", r.Response.Status, r.ResponseBody)
+}
+
+func idToStr(id uint64) string {
+	if id == 0 {
+		return "@me"
+	}
+
+	return strconv.FormatUint(id, 10)
+}
+
+func strToID(id string) uint64 {
+	idUint, _ := strconv.ParseUint(id, 10, 64)
+	return idUint
 }
