@@ -10,3 +10,8 @@ const (
 	UserProduction uint64 = 239775420470394897
 	UserOriginalOwner uint64 = 160567046642335746
 )
+
+// Lengths
+const (
+	LenUint64 = 8
+)

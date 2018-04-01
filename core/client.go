@@ -156,7 +156,7 @@ func (c *Client) Start() (result error) {
 		})
 	}
 
-	return result
+	return
 }
 
 // Stop stops the client and all associated Discord sessions.
@@ -187,7 +187,7 @@ func (c *Client) Stop() (result error) {
 	}
 	c.IsDBClosed = true
 
-	return result
+	return
 }
 
 // OnMessage handles an incoming message.
@@ -238,7 +238,7 @@ func (c *Client) LoadModules() (result error) {
 		}
 	}
 
-	return result
+	return
 }
 
 // LoadModule loads a Module

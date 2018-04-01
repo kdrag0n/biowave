@@ -118,5 +118,5 @@ func ModuleCleanup() (result error) {
 		}
 	}
 
-	return result
+	return
 }
