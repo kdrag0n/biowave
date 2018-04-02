@@ -19,9 +19,9 @@ type Client struct {
 	SentryTags map[string]string
 	Sessions   []*discordgo.Session
 	Commands   map[string]*Command
-	
+
 	// Data
-	DB *badger.DB
+	DB         *badger.DB
 	IsDBClosed bool
 
 	// Emotes
@@ -84,7 +84,7 @@ func NewClient(config Config) (*Client, error) {
 		Sessions:   sessions,
 		Commands:   make(map[string]*Command, 120),
 
-		DB: db,
+		DB:         db,
 		IsDBClosed: false,
 
 		EmoteOk:    "✅",
@@ -198,11 +198,23 @@ func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageC
 		return
 	}
 
-	prefix := c.Config.DefaultPrefix // TODO: prefix
+	channel, err := session.State.Channel(event.ChannelID)
+	if err != nil {
+		panic(err)
+	}
+
+	prefix, err := c.GetByID("prefix", channel.GuildID)
+	if err == badger.ErrKeyNotFound {
+		prefix = c.Config.DefaultPrefix
+		go c.SetByID("prefix", channel.GuildID, prefix)
+	} else if err != nil {
+		Log.Error("Unknown error getting prefix, aborting handler", zap.Error(err))
+		return
+	}
 
 	if strings.HasPrefix(event.Content, prefix) {
 		split := strings.Fields(event.Content)
-		commandName := split[0][len(prefix):]
+		commandName := strings.ToLower(split[0][len(prefix):])
 
 		if command, ok := c.Commands[commandName]; ok {
 			context := &Context{
@@ -216,7 +228,10 @@ func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageC
 			}
 
 			go func() {
-				defer c.ErrorHandler("command")
+				defer c.ErrorHandler("command", func(err error) {
+					context.Fail("Error: " + err.Error())
+				})
+
 				command.Function(context)
 			}()
 		}
@@ -264,7 +279,7 @@ func (c *Client) LoadModule(m Module) error {
 }
 
 // ErrorHandler recovers from panics and reports them when deferred
-func (c *Client) ErrorHandler(scope string) {
+func (c *Client) ErrorHandler(scope string, handlers ...func(error)) {
 	err := recover()
 
 	switch rval := err.(type) {
@@ -275,11 +290,19 @@ func (c *Client) ErrorHandler(scope string) {
 
 		packet := raven.NewPacket(rval.Error(), raven.NewException(rval, raven.NewStacktrace(2, 3, nil)))
 		raven.DefaultClient.Capture(packet, c.SentryTags)
+
+		for _, handler := range handlers {
+			handler(rval)
+		}
 	default:
 		rvalStr := fmt.Sprint(rval) // stringify
 		Log.Error("Error in "+scope, zap.String("error", rvalStr))
 
 		packet := raven.NewPacket(rvalStr, raven.NewException(errors.New(rvalStr), raven.NewStacktrace(2, 3, nil)))
 		raven.DefaultClient.Capture(packet, c.SentryTags)
+
+		for _, handler := range handlers {
+			handler(errors.New(rvalStr))
+		}
 	}
 }

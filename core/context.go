@@ -31,6 +31,11 @@ func (c *Context) Fail(message string) {
 	c.Send(c.Client.EmoteFail + " " + message)
 }
 
+// React adds a reaction to the message that invoked the command.
+func (c *Context) React(emote string) {
+	c.Session.MessageReactionAdd(c.Event.ChannelID, c.Event.ID, emote)
+}
+
 // Info is used to obtain command information.
 func (c *Context) Info(description string, cont ...struct{}) *ChainInfo {
 	if c.info == nil {

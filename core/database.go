@@ -14,7 +14,7 @@ func (c *Client) Get(bucket, key string) (string, error) {
 	return BytesToString(val), nil
 }
 
-// GetByID retrives a string value from the database with a uint64 key.
+// GetByID retrives a string value from the database with an uint64 key.
 func (c *Client) GetByID(bucket string, key uint64) (string, error) {
 	byteKey := make([]byte, len(bucket)+LenUint64)
 	copy(byteKey, bucket)
@@ -56,7 +56,7 @@ func (c *Client) Set(bucket, key, value string) error {
 	return c.SetBytes(bucket, key, StringToBytes(value))
 }
 
-// SetByID sets a string value with a uint64 key in the database.
+// SetByID sets a string value with an uint64 key in the database.
 func (c *Client) SetByID(bucket string, key uint64, value string) error {
 	byteKey := make([]byte, len(bucket)+LenUint64)
 	copy(byteKey, bucket)
@@ -75,6 +75,37 @@ func (c *Client) rawSet(key, value []byte) error {
 	defer tx.Discard()
 
 	err := tx.Set(key, value)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Delete deletes the value for a string key in the database.
+func (c *Client) Delete(bucket, key string) error {
+	return c.rawDelete(StringToBytes(bucket + key))
+}
+
+// DeleteByID deletes the value for an uint64 key in the database.
+func (c *Client) DeleteByID(bucket string, key uint64) error {
+	byteKey := make([]byte, len(bucket)+LenUint64)
+	copy(byteKey, bucket)
+	binary.LittleEndian.PutUint64(byteKey[len(bucket):], key)
+
+	return c.rawDelete(byteKey)
+}
+
+func (c *Client) rawDelete(key []byte) error {
+	tx := c.DB.NewTransaction(true)
+	defer tx.Discard()
+
+	err := tx.Delete(key)
 	if err != nil {
 		return err
 	}
