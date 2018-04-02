@@ -27,13 +27,12 @@ type RateLimiter struct {
 
 // NewRatelimiter returns a new RateLimiter
 func NewRatelimiter() *RateLimiter {
-
 	return &RateLimiter{
 		buckets: make(map[string]*Bucket),
 		global:  new(int64),
 		customRateLimits: []*customRateLimit{
 			&customRateLimit{
-				suffix:   "//reactions//",
+				suffix:   "/2147483647",
 				requests: 1,
 				reset:    200 * time.Millisecond,
 			},

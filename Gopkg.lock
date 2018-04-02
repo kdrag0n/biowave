@@ -66,7 +66,7 @@
   branch = "master"
   name = "github.com/kdrag0n/discordgo"
   packages = ["."]
-  revision = "b821736b496d5decf162344c573c89635758f353"
+  revision = "7b436f548980edb531d7642d11cda897ed40922d"
 
 [[projects]]
   name = "github.com/modern-go/concurrent"

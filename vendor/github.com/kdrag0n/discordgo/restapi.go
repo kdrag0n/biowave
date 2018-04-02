@@ -1905,7 +1905,7 @@ func (s *Session) WebhookExecute(webhookID uint64, token string, wait bool, data
 // messageID : The message ID.
 // emojiID   : Either the unicode emoji for the reaction, or a guild emoji identifier.
 func (s *Session) MessageReactionAdd(channelID, messageID uint64, emojiID string) error {
-	_, err := s.RequestWithBucketID("PUT", EndpointMessageReaction(channelID, messageID, emojiID, 0), nil, EndpointMessageReaction(channelID, 1, "", 1))
+	_, err := s.RequestWithBucketID("PUT", EndpointMessageReaction(channelID, messageID, emojiID, 0), nil, EndpointMessageReaction(channelID, 1, "", 2147483647))
 
 	return err
 }
