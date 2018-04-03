@@ -45,10 +45,10 @@ database: data/db
 developers:
     - 160567046642335746
 
-# Whether to start the profiling server or not. Used for debugging.
-# If you aren't debugging or developing the bot, this should be 'false'.
-# Default: false
-pprof: false
+# Port to start the profiling server on. Used for debugging.
+# If you aren't debugging or developing the bot, this should be 0.
+# Default: 0 (don't start server)
+pprof: 0
 
 # API keys. You do not need to provide most of these.
 # Should you wish to obtain one and use it, you are on your own.

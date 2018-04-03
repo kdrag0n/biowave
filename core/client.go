@@ -6,12 +6,16 @@ import (
 	"github.com/iancmcc/go-datastructures/bitarray"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/getsentry/raven-go"
 	"github.com/kdrag0n/discordgo"
+
+	// HTTP pprof handlers
+	_ "net/http/pprof"
 )
 
 // Client is the full client context
@@ -117,6 +121,18 @@ func (c *Client) ForSessions(iter func(*discordgo.Session)) {
 func (c *Client) Start() (result error) {
 	c.LoadModules()
 	go c.housekeeper()
+
+	if c.Config.Pprof != 0 {
+		go func() {
+			defer c.ErrorHandler("pprof http server")
+
+			err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", c.Config.Pprof), nil)
+			if err != nil {
+				panic(err)
+			}
+		}()
+		Log.Info("pprof server started", zap.Uint16("port", c.Config.Pprof))
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(len(c.Sessions))

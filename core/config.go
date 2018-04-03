@@ -11,7 +11,7 @@ type Config struct {
 	DefaultPrefix string    `yaml:"prefix"`
 	Developers    []uint64  `yaml:"developers"`
 	DatabasePath  string    `yaml:"database"`
-	Pprof         bool      `yaml:"pprof"`
+	Pprof         uint16    `yaml:"pprof"`
 	Shards        int       `yaml:"shards"`
 	Sentry        bool      `yaml:"-"`
 	Keys          KeyConfig `yaml:"keys"`
@@ -32,6 +32,7 @@ func LoadConfig(path string) (Config, error) {
 		DefaultPrefix: "!",
 		Developers:    []uint64{},
 		DatabasePath:  "data/db",
+		Pprof:         0,
 		Sentry:        false,
 		Keys:          KeyConfig{},
 	}
