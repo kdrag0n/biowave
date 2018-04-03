@@ -6,9 +6,8 @@ import (
 	"github.com/iancmcc/go-datastructures/bitarray"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-	"runtime/debug"
-	"strings"
-	"sync/atomic"
+	"sync"
+	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/getsentry/raven-go"
@@ -114,50 +113,34 @@ func (c *Client) ForSessions(iter func(*discordgo.Session)) {
 	}
 }
 
-// Start initiates the client's connections
+// Start initiates the client's connections.
 func (c *Client) Start() (result error) {
 	c.LoadModules()
 	go c.housekeeper()
 
+	var wg sync.WaitGroup
+	wg.Add(len(c.Sessions))
+
 	for idx, dg := range c.Sessions {
-		dg.AddHandler(c.OnMessage)
-		dg.AddHandlerOnce(func(session *discordgo.Session, event *discordgo.Ready) {
-			defer c.ErrorHandler("ready handler")
+		go func(idx int, dg *discordgo.Session) {
+			defer wg.Done()
 
-			if atomic.LoadUint32(&c.isReady) != 1 {
-				atomic.StoreUint32(&c.isReady, 1)
+			dg.AddHandler(c.onMessage)
+			dg.AddHandlerOnce(c.onReady)
 
-				// first to be ready
-				sID := StrID(dg.State.User.ID)
-				c.ourMention = "<@" + sID + ">"
-				c.ourGuildMention = "<@!" + sID + ">"
-
-				app, err := dg.Application(0)
-				if err != nil {
-					Log.Error("Error getting bot application", zap.Error(err))
-					c.ownerID = UserOriginalOwner
-				} else {
-					c.ownerID = app.Owner.ID
-				}
-
-				c.Developers.SetBit(c.ownerID)
+			err := dg.Open()
+			if err != nil {
+				Log.Error("Error opening session", zap.Int("shard", idx), zap.Error(err))
+				multierr.Append(result, err)
 			}
 
-			_, err := dg.State.Guild(GuildPrivate)
-			if err == nil {
-				c.EmoteOk = "<:ok:428754249027944458>"
-				c.EmoteFail = "<:fail:428754276777459712>"
-				c.EmoteBot = "<:bot:428754293156216834>"
-				c.EmoteGrave = "<:rip:337405147347025930>"
-			}
-		})
+			Log.Info("Started shard.", zap.Int("shard", idx))
+		}(idx, dg)
 
-		err := dg.Open()
-		if err != nil {
-			Log.Error("Error opening session", zap.Int("shard", idx), zap.Error(err))
-			multierr.Append(result, err)
-		}
+		time.Sleep(4 * time.Second)
 	}
+
+	wg.Wait()
 
 	if result == nil {
 		c.UpdateStatus()
@@ -169,12 +152,21 @@ func (c *Client) Start() (result error) {
 // Stop stops the client and all associated Discord sessions.
 func (c *Client) Stop() (result error) {
 	// close sessions
+	var wg sync.WaitGroup
+	wg.Add(len(c.Sessions))
+
 	for idx, dg := range c.Sessions {
-		err := dg.Close()
-		if err != nil {
-			Log.Error("Error closing session", zap.Int("shard", idx), zap.Error(err))
-			multierr.Append(result, err)
-		}
+		go func(idx int, dg *discordgo.Session) {
+			defer wg.Done()
+
+			err := dg.Close()
+			if err != nil {
+				Log.Error("Error closing session", zap.Int("shard", idx), zap.Error(err))
+				multierr.Append(result, err)
+			}
+
+			Log.Info("Stopped.", zap.Int("shard", idx))
+		}(idx, dg)
 	}
 
 	// unload modules
@@ -195,61 +187,6 @@ func (c *Client) Stop() (result error) {
 	c.IsDBClosed = true
 
 	return
-}
-
-// OnMessage handles an incoming message.
-func (c *Client) OnMessage(session *discordgo.Session, event *discordgo.MessageCreate) {
-	defer c.ErrorHandler("message handler")
-
-	if event.Author.ID == session.State.User.ID || len(event.Content) == 1 {
-		return
-	}
-
-	channel, err := session.State.Channel(event.ChannelID)
-	if err != nil {
-		panic(err)
-	}
-
-	prefix, err := c.GetByID("prefix", channel.GuildID)
-	if err == badger.ErrKeyNotFound {
-		prefix = c.Config.DefaultPrefix
-		go c.SetByID("prefix", channel.GuildID, prefix)
-	} else if err != nil {
-		Log.Error("Unknown error getting prefix, aborting handler", zap.Error(err))
-		return
-	}
-
-	if strings.HasPrefix(event.Content, prefix) {
-		split := strings.Fields(event.Content)
-		commandName := strings.ToLower(split[0][len(prefix):])
-
-		if command, ok := c.Commands[commandName]; ok {
-			context := &Context{
-				Client:  c,
-				Session: session,
-				Event:   event,
-				Invoker: commandName,
-				Args:    split[1:],
-				RawArgs: strings.TrimSpace(event.Content[len(prefix)+len(commandName):]),
-				info:    nil,
-			}
-
-			go func() {
-				defer c.ErrorHandler("command", func(err error) {
-					context.Fail("Error: " + err.Error())
-				})
-
-				debug.SetPanicOnFault(true)
-
-				command.Function(context)
-			}()
-		}
-	} else if (strings.HasPrefix(event.Content, c.ourMention) || strings.HasPrefix(event.Content, c.ourGuildMention)) && !event.MentionEveryone {
-		request := strings.TrimSpace(event.Content[min(len(event.Content), 22):])
-		if strings.EqualFold(request, "prefix") {
-
-		}
-	} // else if session.State.Channel(channelID uint64)
 }
 
 // LoadModules loads all the built in modules

@@ -87,7 +87,7 @@ func main() {
 
 	client.Start()
 
-	core.Log.Info("Started.")
+	core.Log.Info("All shards started.")
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
