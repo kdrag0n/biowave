@@ -1,9 +1,11 @@
 package core
 
 import (
-	"strings"
-	"strconv"
+	"math/rand"
 	"reflect"
+	"strconv"
+	"strings"
+	"time"
 	"unsafe"
 )
 
@@ -66,4 +68,20 @@ func StringToBytes(s string) []byte {
 	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
 	bh := reflect.SliceHeader{Data: sh.Data, Len: sh.Len, Cap: sh.Len}
 	return *(*[]byte)(unsafe.Pointer(&bh))
+}
+
+// Rand returns an int between 0 and max.
+func Rand(max int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max)
+}
+
+// RandRange returns an int between min and max.
+func RandRange(min, max int) int {
+	rand.Seed(time.Now().Unix())
+	if max == 0 {
+		return 0
+	}
+
+	return rand.Intn(max-min) + min
 }

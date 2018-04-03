@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Token         string    `yaml:"token"`
 	DefaultPrefix string    `yaml:"prefix"`
+	Developers    []uint64  `yaml:"developers"`
 	DatabasePath  string    `yaml:"database"`
 	Shards        int       `yaml:"shards"`
 	Sentry        bool      `yaml:"-"`
@@ -28,6 +29,7 @@ func LoadConfig(path string) (Config, error) {
 	config := Config{
 		Shards:        1,
 		DefaultPrefix: "!",
+		Developers:    []uint64{},
 		DatabasePath:  "data/db",
 		Sentry:        false,
 		Keys:          KeyConfig{},
