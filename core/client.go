@@ -146,11 +146,11 @@ func (c *Client) Start() (result error) {
 
 			err := dg.Open()
 			if err != nil {
-				Log.Error("Error opening session", zap.Int("shard", idx), zap.Error(err))
+				Log.Error("error opening session", zap.Int("shard", idx), zap.Error(err))
 				multierr.Append(result, err)
 			}
 
-			Log.Info("Started shard.", zap.Int("shard", idx))
+			Log.Info("shard started", zap.Int("shard", idx))
 		}(idx, dg)
 
 		time.Sleep(4 * time.Second)
@@ -177,11 +177,11 @@ func (c *Client) Stop() (result error) {
 
 			err := dg.Close()
 			if err != nil {
-				Log.Error("Error closing session", zap.Int("shard", idx), zap.Error(err))
+				Log.Error("error closing session", zap.Int("shard", idx), zap.Error(err))
 				multierr.Append(result, err)
 			}
 
-			Log.Info("Stopped.", zap.Int("shard", idx))
+			Log.Info("stopped", zap.Int("shard", idx))
 		}(idx, dg)
 	}
 
@@ -191,7 +191,7 @@ func (c *Client) Stop() (result error) {
 	for _, module := range modules {
 		err := module.Unload(c)
 		if err != nil {
-			Log.Error("Error on module unload", zap.String("module", module.Name), zap.Error(err))
+			Log.Error("error unloading module", zap.String("module", module.Name), zap.Error(err))
 			multierr.Append(result, err)
 		}
 	}
@@ -199,7 +199,7 @@ func (c *Client) Stop() (result error) {
 	// close database
 	err := c.DB.Close()
 	if err != nil {
-		Log.Error("Error closing database", zap.Error(err))
+		Log.Error("error closing database", zap.Error(err))
 		multierr.Append(result, err)
 	}
 	c.IsDBClosed = true
@@ -212,7 +212,7 @@ func (c *Client) LoadModules() (result error) {
 	for _, module := range modules {
 		err := c.LoadModule(module)
 		if err != nil {
-			Log.Error("Error loading module", zap.String("module", module.Name), zap.Error(err))
+			Log.Error("error loading module", zap.String("module", module.Name), zap.Error(err))
 			multierr.Append(result, err)
 		}
 	}
@@ -250,7 +250,7 @@ func (c *Client) ErrorHandler(scope string, handlers ...func(error)) {
 	case nil:
 		return
 	case error:
-		Log.Error("Error in "+scope, zap.Error(rval))
+		Log.Error("error in "+scope, zap.Error(rval))
 
 		packet := raven.NewPacket(rval.Error(), raven.NewException(rval, raven.NewStacktrace(3, 5, appPkgPrefixes)))
 		raven.DefaultClient.Capture(packet, map[string]string{
@@ -262,7 +262,7 @@ func (c *Client) ErrorHandler(scope string, handlers ...func(error)) {
 		}
 	default:
 		rvalStr := fmt.Sprint(rval) // stringify
-		Log.Error("Error in "+scope, zap.String("error", rvalStr))
+		Log.Error("error in "+scope, zap.String("error", rvalStr))
 
 		packet := raven.NewPacket(rvalStr, raven.NewException(errors.New(rvalStr), raven.NewStacktrace(3, 5, appPkgPrefixes)))
 		raven.DefaultClient.Capture(packet, map[string]string{

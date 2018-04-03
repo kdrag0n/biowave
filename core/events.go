@@ -26,7 +26,7 @@ func (c *Client) onMessage(session *discordgo.Session, event *discordgo.MessageC
 		prefix = c.Config.DefaultPrefix
 		go c.SetByID("prefix", channel.GuildID, prefix)
 	} else if err != nil {
-		Log.Error("Unknown error getting prefix, aborting handler", zap.Error(err))
+		Log.Error("error getting prefix, aborting handler", zap.Error(err))
 		return
 	}
 
@@ -76,7 +76,7 @@ func (c *Client) onReady(session *discordgo.Session, event *discordgo.Ready) {
 
 		app, err := session.Application(0)
 		if err != nil {
-			Log.Error("Error getting bot application", zap.Error(err))
+			Log.Error("error getting bot application", zap.Error(err))
 			c.ownerID = UserOriginalOwner
 		} else {
 			c.ownerID = app.Owner.ID

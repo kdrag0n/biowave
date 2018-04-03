@@ -113,7 +113,7 @@ func ModuleCleanup() (result error) {
 	for _, module := range modules {
 		err := module.Cleanup()
 		if err != nil {
-			Log.Error("Error on module cleanup", zap.String("module", module.Name), zap.Error(err))
+			Log.Error("error cleaning up module", zap.String("module", module.Name), zap.Error(err))
 			multierr.Append(result, err)
 		}
 	}
