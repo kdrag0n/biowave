@@ -11,6 +11,7 @@ type Config struct {
 	DefaultPrefix string    `yaml:"prefix"`
 	Developers    []uint64  `yaml:"developers"`
 	DatabasePath  string    `yaml:"database"`
+	Pprof         bool      `yaml:"pprof"`
 	Shards        int       `yaml:"shards"`
 	Sentry        bool      `yaml:"-"`
 	Keys          KeyConfig `yaml:"keys"`

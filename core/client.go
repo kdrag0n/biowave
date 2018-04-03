@@ -169,6 +169,8 @@ func (c *Client) Stop() (result error) {
 		}(idx, dg)
 	}
 
+	wg.Wait()
+
 	// unload modules
 	for _, module := range modules {
 		err := module.Unload(c)

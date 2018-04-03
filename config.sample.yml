@@ -1,0 +1,69 @@
+# This is the Biowave Discord bot sample configuration.
+# Feel free to copy this configuration and edit it for yourself.
+# If you remove an option, the default is used instead.
+
+# The token the bot should use to login to Discord.
+# Get this from the Application -> Bot User page on Discord Developers.
+# Step by step instructions:
+#   - Visit https://discordapp.com/developers/applications/me
+#   - Click the "New App" button
+#   - Provide an app name and/or icon (this is the bot's avatar)
+#         A description is not required. It it also not used.
+#   - Click "Create App"
+#   - Click "Create a Bot User". You may need to scroll down to find it.
+#   - Confirm the action by clicking "Yes, do it!"
+#   - You will now see a "Token" line. Click the blue text
+#       that says "click to reveal" next to it.
+#   - Copy the text that shows. This is the token.
+#       Protect the token like it's your password. Do not share it.
+#   - Replace the token below with your new token.
+#       Please note that the "secret" is NOT the token.
+#       Secrets look like this instead: YnKqy3BRaknVTaX5hH7yZwoZvAA1S3QJ
+token: NDMwNTY3MTE3MjA5NzMxMDcy.DaSEiA.aEoJfURMaWAc2hxQnf_O0Plu7fE
+
+# The number of shards the bot should spawn. If you don't know what this is,
+# don't change it.
+# Default: 1
+shards: 1
+
+# The default command prefix. The prefix can be changed per server,
+# but if a server doesn't change it, this is used. It is also used
+# in direct message (DM) conversations.
+# Default: !
+prefix: "!"
+
+# Where to store the database. Make sure your user account has permission
+# to write here. Note that this is a *folder*, not a file.
+# Default: data/db
+database: data/db
+
+# List of developer user IDs. If you are the owner of the bot account,
+# you do not need to add yourself here. The owner is automatically added.
+# Developers have full permissions and control over the bot.
+# Be careful with who you add.
+# Default: owner
+developers:
+    - 160567046642335746
+
+# Whether to start the profiling server or not. Used for debugging.
+# If you aren't debugging or developing the bot, this should be 'false'.
+# Default: false
+pprof: false
+
+# API keys. You do not need to provide most of these.
+# Should you wish to obtain one and use it, you are on your own.
+# Instructions will not be provided.
+# You may remove this entire section if you want.
+# Default: none
+keys:
+    # Sentry.io key for error reporting.
+    sentry:
+
+    # Google key for the Google Search command.
+    google:
+
+    # ChatEngine key for natural language conversation.
+    chatengine:
+
+    # OpenWeatherMap key for the weather command.
+    openweathermap:
