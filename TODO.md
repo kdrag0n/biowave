@@ -161,10 +161,5 @@
 
 ### Core
  - faq: Get the Frequently Asked Questions list.
- - owner: Become the bot owner.
  - info: Get some info about me.
  - help: Because we all need help.
- - uptime: Get how long I've been running.
- - ping: Pong!
- - test: Make sure I work.
- - say: Say something! Say it!
