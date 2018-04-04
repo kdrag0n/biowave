@@ -90,6 +90,7 @@ func main() {
 		}()
 
 		<-sc
+		os.Stdout.WriteString("\r")
 	}()
 
 	client.Start()
