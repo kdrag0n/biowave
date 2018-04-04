@@ -18,22 +18,25 @@ import (
 	_ "net/http/pprof"
 )
 
-// Client is the full client context
+// Client is the full client context.
 type Client struct {
 	Config     Config
 	Sessions   []*discordgo.Session
 	Commands   map[string]*Command
 	Developers bitarray.BitArray
 
+	StartTime  time.Time
+
 	// Data
 	DB         *badger.DB
 	IsDBClosed bool
 
 	// Emotes
-	EmoteOk    string
-	EmoteFail  string
-	EmoteGrave string
-	EmoteBot   string
+	EmoteOk      string
+	EmoteFail    string
+	EmoteGrave   string
+	EmoteLoading string
+	EmoteBot     string
 
 	ourMention      string
 	ourGuildMention string
@@ -42,7 +45,7 @@ type Client struct {
 	isReady uint32
 }
 
-// NewClient creates a new Discord client
+// NewClient creates a new bot client.
 func NewClient(config Config) (*Client, error) {
 	// verify config
 	if l := len(config.Token); l < 56 || l > 64 {
@@ -94,13 +97,16 @@ func NewClient(config Config) (*Client, error) {
 		Commands:   make(map[string]*Command, 120),
 		Developers: devSet,
 
+		StartTime: time.Now(),
+
 		DB:         db,
 		IsDBClosed: false,
 
-		EmoteOk:    "✅",
-		EmoteFail:  "❌",
-		EmoteGrave: "⚰",
-		EmoteBot:   "bot",
+		EmoteOk:      "✅",
+		EmoteFail:    "❌",
+		EmoteGrave:   "⚰",
+		EmoteLoading: "⌛",
+		EmoteBot:     "bot",
 
 		ourMention:      "<@0>",
 		ourGuildMention: "<@!0>",
@@ -110,7 +116,7 @@ func NewClient(config Config) (*Client, error) {
 	}, nil
 }
 
-// ForSessions executes a function with every session
+// ForSessions executes a function with every session.
 func (c *Client) ForSessions(iter func(*discordgo.Session)) {
 	for _, dg := range c.Sessions {
 		iter(dg)
@@ -142,7 +148,7 @@ func (c *Client) Start() (result error) {
 			defer wg.Done()
 
 			dg.AddHandler(c.onMessage)
-			dg.AddHandlerOnce(c.onReady)
+			dg.AddHandlerOnce(c.onReady) // don't want to fire again on connect
 
 			err := dg.Open()
 			if err != nil {
@@ -150,7 +156,7 @@ func (c *Client) Start() (result error) {
 				multierr.Append(result, err)
 			}
 
-			Log.Info("shard started", zap.Int("shard", idx))
+			Log.Info("started", zap.Int("shard", idx))
 		}(idx, dg)
 
 		time.Sleep(4 * time.Second)
@@ -207,7 +213,7 @@ func (c *Client) Stop() (result error) {
 	return
 }
 
-// LoadModules loads all the built in modules
+// LoadModules loads all the built in modules.
 func (c *Client) LoadModules() (result error) {
 	for _, module := range modules {
 		err := c.LoadModule(module)
@@ -220,7 +226,7 @@ func (c *Client) LoadModules() (result error) {
 	return
 }
 
-// LoadModule loads a Module
+// LoadModule loads a Module.
 func (c *Client) LoadModule(m Module) error {
 	for name, command := range m.Commands {
 		if _, ok := c.Commands[name]; ok {
@@ -242,7 +248,7 @@ func (c *Client) LoadModule(m Module) error {
 	return nil
 }
 
-// ErrorHandler recovers from panics and reports them when deferred
+// ErrorHandler recovers from panics and reports them when deferred.
 func (c *Client) ErrorHandler(scope string, handlers ...func(error)) {
 	err := recover()
 

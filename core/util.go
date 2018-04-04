@@ -85,3 +85,8 @@ func RandRange(min, max int) int {
 
 	return rand.Intn(max-min) + min
 }
+
+// Milliseconds returns the length of a time.Duration in milliseconds.
+func Milliseconds(duration time.Duration) float32 {
+	return float32(duration) / 1e6
+}

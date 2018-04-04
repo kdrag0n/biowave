@@ -69,27 +69,31 @@ func main() {
 		core.Log.Fatal("error creating client", zap.Error(err))
 	}
 
-	defer func() {
-		if !client.IsDBClosed {
-			err = client.DB.Close()
-			if err != nil {
-				core.Log.Error("error closing database", zap.Error(err))
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		defer os.Exit(0)
+		defer func() {
+			if !client.IsDBClosed {
+				err = client.DB.Close()
+				if err != nil {
+					core.Log.Error("error closing database", zap.Error(err))
+				}
 			}
-		}
-	}()
-	defer func() {
-		core.Log.Info("stopping client")
-		client.Stop()
+		}()
+		defer func() {
+			core.Log.Info("stopping client")
+			client.Stop()
 
-		core.Log.Info("cleaning up modules")
-		core.ModuleCleanup()
+			core.Log.Info("cleaning up modules")
+			core.ModuleCleanup()
+		}()
+
+		<-sc
 	}()
 
 	client.Start()
 
 	core.Log.Info("start complete")
-
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-	<-sc
+	<-make(chan struct{})
 }

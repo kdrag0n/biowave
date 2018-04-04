@@ -91,5 +91,6 @@ func (c *Client) onReady(session *discordgo.Session, event *discordgo.Ready) {
 		c.EmoteFail = "<:fail:428754276777459712>"
 		c.EmoteBot = "<:bot:428754293156216834>"
 		c.EmoteGrave = "<:rip:337405147347025930>"
+		c.EmoteLoading = "<a:loading:428754343018364929>"
 	}
 }
