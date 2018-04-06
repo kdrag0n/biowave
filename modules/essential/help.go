@@ -26,7 +26,7 @@ func (C) Help(c *core.Context) {
 				}
 			}
 		}
-	} else {
+	} else { // TODO: search
 
 	}
 
