@@ -13,16 +13,9 @@ func init() {
 // C contains commands.
 type C struct{}
 
-// Test makes sure the bot is working.
-func (C) Test(c *core.Context) {
-	c.Info("Test the bot.")
-
-	c.React("👍")
-}
-
 // Ping returns the time it takes to respond to a message.
 func (C) Ping(c *core.Context) {
-	c.Info("Pong!")
+	c.Info("pong")
 
 	before := time.Now()
 	c.Loading("Pong!")
@@ -32,7 +25,7 @@ func (C) Ping(c *core.Context) {
 
 // Uptime returns how long the bot has been running.
 func (C) Uptime(c *core.Context) {
-	c.Info("How long have I been up for?")
+	c.Info("of the bot")
 
 	uptime := time.Since(c.Client.StartTime)
 	h := uint16(uptime.Hours())

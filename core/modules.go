@@ -17,7 +17,7 @@ type Module struct {
 
 	// Standard actions
 	Cleanup ModuleCleanupFunc
-	Unload ModuleUnloadFunc
+	Unload  ModuleUnloadFunc
 }
 
 // A ModuleCleanupFunc cleans up a module.
@@ -47,6 +47,7 @@ func (m *Module) Add(name, desc string, aliases []string, usage []Argument, hidd
 		Usage:       usage,
 		Hidden:      hidden,
 		GuildOnly:   guildOnly,
+		Module:      m,
 		Permissions: []Permission{},
 		Function:    exec,
 	}
@@ -58,8 +59,8 @@ func RegisterModule(name string, cmdStruct interface{}) {
 		Name:     name,
 		Commands: make(map[string]*Command, 20),
 
-		Cleanup: func() error {return nil},
-		Unload: func (*Client) error {return nil},
+		Cleanup: func() error { return nil },
+		Unload:  func(*Client) error { return nil },
 	}
 
 	t := reflect.TypeOf(cmdStruct)

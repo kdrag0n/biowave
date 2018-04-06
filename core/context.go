@@ -138,3 +138,36 @@ func (c *Context) Info(description string, cont ...struct{}) *ChainInfo {
 		i: c.info,
 	}
 }
+
+// Embed returns a new embed builder.
+func (c *Context) Embed() *Embed {
+	return &Embed{
+		MessageEmbed: &discordgo.MessageEmbed{},
+		context: c,
+	}
+}
+
+// SendEmbed sends an embed as a message.
+func (c *Context) SendEmbed(embed *Embed) {
+	msg, err := c.Session.ChannelMessageSendEmbed(c.Event.ChannelID, embed.MessageEmbed)
+	if err != nil {
+		panic(err)
+	}
+
+	c.lastSent = msg
+}
+
+// DirectSendEmbed DMs an embed to the requesting user.
+func (c *Context) DirectSendEmbed(embed *Embed) {
+	channel, err := c.Session.UserChannelCreate(c.Event.Author.ID)
+	if err != nil {
+		panic(err)
+	}
+
+	msg, err := c.Session.ChannelMessageSendEmbed(channel.ID, embed.MessageEmbed)
+	if err != nil {
+		panic(err)
+	}
+
+	c.lastSent = msg
+}

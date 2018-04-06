@@ -9,6 +9,7 @@ type Command struct {
 	Hidden      bool
 	GuildOnly   bool
 
+	Module *Module
 	Permissions []Permission
 	Function    CommandFunc
 }
@@ -30,6 +31,17 @@ type cInfo struct {
 // ChainInfo provides an easy chained interface to set all command information.
 type ChainInfo struct {
 	i *cInfo
+}
+
+// Requires returns whether the command requires a permission.
+func (c *Command) Requires(reqPerm Permission) bool {
+	for _, perm := range c.Permissions {
+		if perm == reqPerm {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Aliases sets the aliases for a command.
