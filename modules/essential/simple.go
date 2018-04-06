@@ -6,13 +6,6 @@ import (
 	"time"
 )
 
-func init() {
-	core.RegisterModule("Essential", C{})
-}
-
-// C contains commands.
-type C struct{}
-
 // Ping returns the time it takes to respond to a message.
 func (C) Ping(c *core.Context) {
 	c.Info("pong")
